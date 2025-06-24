@@ -49,4 +49,4 @@ class ClockifyAPI:
     
     def get_tasks(self, workspaceId, projectId):
         url = f"https://api.clockify.me/api/v1/workspaces/{workspaceId}/projects/{projectId}/tasks"
-        return return self._make_get_request(url, desciption="Time entries in progress")
+        return self._make_get_request(url, desciption="Time entries in progress")
