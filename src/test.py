@@ -3,20 +3,44 @@ import os
 import pandas as pd
 import json
 
+pd.set_option('display.max_columns', None)
+
+# Get your API key and workspace ID from environment variables
 api_key = os.environ['clockify_api_key']
 workspaceId = os.environ['wID']
-
-#need to be fixed/ unsafe!
-
-
 
 headers = {'x-api-key': api_key}
 url = f"https://api.clockify.me/api/v1/workspaces/{workspaceId}/projects"
 
+# Make the GET request
 response = rq.get(url, headers=headers)
+response.raise_for_status()  # (optional but useful for catching errors early)
+
+# Parse the JSON response (already returns a list of dicts)
 data = response.json()
 
-print(json.dumps(response.json(), indent = 4))
+df = pd.json_normalize(data)
+
+# membership_col = df['memberships']
+
+# membership_dict = pd.json_normalize(membership_col)
+
+membership_col = df['memberships']
+
+# Step 2: Flatten the list of lists into one list
+flat_list = []
+for item in membership_col:
+    if isinstance(item, list):
+        flat_list.extend(item)
+m_df = pd.DataFrame(flat_list)
+
+df_final = pd.concat([df, m_df], axis = 1)
+df_final = df_final.drop(columns=['memberships'])
+print(df_final.info())
+
+
+# print(json.dumps(data, indent = 4))
+
 
 
 

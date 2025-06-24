@@ -114,3 +114,6 @@ db.insert_logs(clean_data)
 **AsyncIO**: If you're dealing with lots of API requests, switch to `httpx` + `asyncpg`.
 ---
 Let me know if you'd like a Dockerfile, SQL schema, or full working example.
+
+ORM 
+from sqlalchemy import create_engine
