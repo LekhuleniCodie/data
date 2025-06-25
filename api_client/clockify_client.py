@@ -68,8 +68,9 @@ def main():
     api_key = os.environ['clockify_api_key']
     workspaceId = os.environ['wID']
     clockify_client = ClockifyClient(api_key)
-    print("Client created successfully.")
-    print(json.dumps(clockify_client.get_users(workspaceId), indent = 4))
+    
+    projects = clockify_client.get_projects(workspaceId)
+    #print(json.dumps(clockify_client.get_time_entries_in_progress(workspaceId), indent = 4))
 
 if __name__ == "__main__":
     main()
