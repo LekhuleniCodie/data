@@ -117,3 +117,12 @@ Let me know if you'd like a Dockerfile, SQL schema, or full working example.
 
 ORM 
 from sqlalchemy import create_engine
+
+THINGS TO LOOK AT, BREAK DOWN THE ARRAYS INTO MANAGABLE PARTS
+
+CUSTOM FIELDS IN USERS, CREATE A DIFF TABLE FOR THIS.
+ASSIGNEE ID IN tasks
+USERGROUP ID's
+TAGS IDs
+Custom field values
+

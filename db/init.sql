@@ -38,25 +38,26 @@ CREATE TABLE projects (
 );
 
 CREATE TABLE timestamps (
-	id TEXT PRIMARY KEY,
+		id TEXT PRIMARY KEY,
     	description TEXT,
     	tag_ids TEXT,
     	user_id TEXT,
-   	 billable BOOLEAN,
+   	 	billable BOOLEAN,
     	task_id TEXT,
     	project_id TEXT,
     	workspace_id TEXT,
-    	time_interval_start TIMESTAMP,
-    	time_interval_end TIMESTAMP,
+		custom_field_values TEXT,
+		type_my TEXT,
+		kiosk_id TEXT,
+		is_locked BOOLEAN,
+    	time_interval_start TIMESTAMPZ,
+    	time_interval_end TIMESTAMPZ,
     	time_interval_duration INTERVAL,
-    	custom_field_values TEXT,
-    	type TEXT,
-    	kiosk_id TEXT,
-    	hourly_rate_amount INTEGER,
+    	hourly_rate_amount FLOAT,
     	hourly_rate_currency TEXT,
-    	cost_rate_amount INTEGER,
-    	cost_rate_currency TEXT,
-    	is_locked BOOLEAN
+    	cost_rate_amount FLOAT,
+    	cost_rate_currency TEXT
+
 );
 
 
@@ -119,13 +120,13 @@ CREATE TABLE tasks (
 	id TEXT PRIMARY KEY,
 	name TEXT,
 	project_id TEXT,
-	assignee_ids TEXT[],
+	assignee_ids TEXT,
 	assignee_id TEXT,
-	usergroup_ids TEXT[],
+	user_group_ids TEXT,
 	estimate TEXT,
 	status TEXT,
 	budget_estimate FLOAT,
-	duration TEXT,
+	duration INTERVAL,
 	billable BOOLEAN,
 	hourly_rate FLOAT,
 	cost_rate FLOAT

@@ -1,7 +1,10 @@
 import json
 import pandas as pd
 import numpy as np
+import numpy as np
 import re
+import isodate
+from datetime import datetime
 
 
 class Transformer:
@@ -67,29 +70,51 @@ class Transformer:
         if not data:
             return pd.DataFrame()
 
-        df = pd.json_normalize(data)
+        df = pd.json_normalize(data, sep="_")
+        df = df.rename(columns={"type": "type_my"})
+
+
+        df.columns = [self.camel_to_snake(col_name) for col_name in df.columns]
+        df[["hourly_rate_amount", "cost_rate_amount"]] = df[["hourly_rate_amount", "cost_rate_amount"]].astype(float)
 
         
-        cast_cols = ['tagIds', 'customFieldValues']
+        cast_cols = ['tag_ids', 'custom_field_values']
         for col in cast_cols:
             if col in df.columns:
                 df[col] = df[col].apply(lambda x: str(x) if isinstance(x, list) else x)
+        
+        df.replace({"": None, "[]": None}, inplace=True)
+        df.replace({np.nan: None}, inplace=True)
+
+        df['time_interval_duration'] = df['time_interval_duration'].apply(self.safe_parse_duration)
+        df[["time_interval_start", "time_interval_end"]] = df[["time_interval_start", "time_interval_end"]].apply(pd.to_datetime)
+        df['time_interval_start'] = df['time_interval_start'].dt.tz_localize(None)
+        df['time_interval_end'] = df['time_interval_end'].dt.tz_localize(None)
+
+
+
+
+
+        
 
         return df
 
 
-    def process_tasks(self, data: dict):
-        df = pd.json_normalize(data)
 
-        df = df.explode(["assigneeIds", "userGroupIds"])
-
-        return df
 
     
 
     def camel_to_snake(self, name):
         s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
         return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+    def safe_parse_duration(self, x):
+        if isinstance(x, str):
+            return isodate.parse_duration(x)
+        else:
+            return None
+
+
 
 
     

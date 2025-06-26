@@ -2,6 +2,7 @@ import requests
 import os
 import json
 
+
 class ClockifyClient:
     def __init__(self, api_key):
         # Just storing my API key in the headers — needed for all requests
@@ -16,7 +17,7 @@ class ClockifyClient:
         try:
             response = requests.get(url, headers=self.headers)
             response.raise_for_status()  # throw error for any 4xx/5xx responses
-            print(f"{description} successfully retrieved.")
+            print(f"Request for {description} successfully retrieved.")
             return response.json()
 
         except requests.exceptions.HTTPError as http_err:
@@ -58,10 +59,53 @@ class ClockifyClient:
         url = f"https://api.clockify.me/api/v1/workspaces/{workspaceId}/user/{userId}/time-entries"
         return self._make_get_request(url, description="User time entries")
 
+    def get_all_time_entries(self, workspaceId):
+        users = self.get_users(workspaceId)
+        all_entries = []
+
+        for user in users:
+            user_id = user['id']
+            user_entries = self.get_entries_user(workspaceId, user_id)
+            if user_entries:
+                all_entries.extend(user_entries)        # appends each task individually, greatest discovery today!!!
+
+        return all_entries
+
+
     def get_tasks(self, workspaceId, projectId):
         # Get tasks under a specific project
         url = f"https://api.clockify.me/api/v1/workspaces/{workspaceId}/projects/{projectId}/tasks"
-        return self._make_get_request(url, description="Project tasks")
+        tasks = self._make_get_request(url, description="Project tasks")
+
+        if tasks:
+            print("Project has tasks")
+        else:
+            print("Project has not tasks")
+        return tasks
+
+
+
+
+    def get_all_tasks(self, workspaceId):
+        projects = self.get_projects(workspaceId)
+        all_tasks = []
+
+        for project in projects:
+            if project:
+                project_id = project['id']
+                tasks = self.get_tasks(workspaceId,project_id)  # tasks is a list
+                all_tasks.extend(tasks)        # appends each task individually, greatest discovery today!!!
+
+        return all_tasks
+
+            
+
+        
+
+
+    def get_workspace_id(self):
+        url = f"https://api.clockify.me/api/v1/workspaces"
+        return self._make_get_request(url, description = "workspace id")
 
 
 def main():
@@ -69,8 +113,9 @@ def main():
     workspaceId = os.environ['wID']
     clockify_client = ClockifyClient(api_key)
     
-    projects = clockify_client.get_projects(workspaceId)
-    #print(json.dumps(clockify_client.get_time_entries_in_progress(workspaceId), indent = 4))
+    all_entries = clockify_client.get_all_time_entries(workspaceId)
+
+    print(json.dumps(all_entries, indent = 4))
 
 if __name__ == "__main__":
     main()
