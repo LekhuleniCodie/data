@@ -3,6 +3,10 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+#represents the 'models' that will be used to match to the db
+
+
+#client class which matches to the clients table.
 class Client(Base):
     __tablename__ = "clients"
 
@@ -16,6 +20,7 @@ class Client(Base):
     currency_id = Column(String(50))
     currency_code = Column(String(50))
 
+#user class which matches to the users table
 class User(Base):
     __tablename__ = "users"
 
@@ -60,6 +65,7 @@ class User(Base):
     show_only_working_days = Column(Boolean)
 
 
+#task class which matches to the tasks table
 class Task(Base):
     __tablename__ = "tasks"
 
@@ -81,6 +87,7 @@ class Task(Base):
     hourly_rate = Column(Float)
     cost_rate = Column(Float)
 
+#time entry class which matches to the timestamps table
 class TimeEntry(Base):
     __tablename__ = 'timestamps'
 
@@ -103,3 +110,38 @@ class TimeEntry(Base):
     hourly_rate_currency = Column(String)
     cost_rate_amount = Column(Float)
     cost_rate_currency = Column(String)
+
+#project class which matches to the base table
+class Project(Base):
+    __tablename__ = 'projects'
+
+    id = Column(String, primary_key=True)
+    name = Column(String)
+    client_id = Column(String)
+    workspace_id = Column(String)
+    billable = Column(Boolean)
+    color = Column(String)
+    archived = Column(Boolean)
+    duration = Column(Interval)  
+    client_name = Column(String)
+    note = Column(String)
+    cost_rate = Column(Float)  
+    budget_estimate = Column(Float)
+    estimate_reset = Column(Float)
+    template = Column(Boolean)
+    public = Column(Boolean)
+    hourly_rate_amount = Column(Float)
+    hourly_rate_currency = Column(String)
+    estimate_estimate = Column(String)
+    estimate_type = Column(String)
+    time_estimate_estimate = Column(String)
+    time_estimate_type = Column(String)
+    time_estimate_reset_option = Column(String)
+    time_estimate_active = Column(Boolean)
+    time_estimate_include_non_billable = Column(Boolean)
+    user_id = Column(String)
+    hourly_rate = Column(Float)  
+    target_id = Column(String)
+    membership_type = Column(String)
+    membership_status = Column(String)
+

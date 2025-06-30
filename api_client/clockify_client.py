@@ -5,7 +5,7 @@ import json
 
 class ClockifyClient:
     def __init__(self, api_key):
-        # Just storing my API key in the headers — needed for all requests
+        #storing the api key in the headers, needed for all requests
         self.headers = {
             "x-Api-Key": api_key
         }
@@ -60,6 +60,7 @@ class ClockifyClient:
         return self._make_get_request(url, description="User time entries")
 
     def get_all_time_entries(self, workspaceId):
+        """iterates through all the users and gets their time stamps/ entries"""
         users = self.get_users(workspaceId)
         all_entries = []
 
@@ -87,6 +88,7 @@ class ClockifyClient:
 
 
     def get_all_tasks(self, workspaceId):
+        """iterates through all projects and and retrieves the tasks in each project"""
         projects = self.get_projects(workspaceId)
         all_tasks = []
 
@@ -98,24 +100,22 @@ class ClockifyClient:
 
         return all_tasks
 
-            
-
-        
-
-
     def get_workspace_id(self):
+        """
+        gets the workspaceId
+        """
         url = f"https://api.clockify.me/api/v1/workspaces"
         return self._make_get_request(url, description = "workspace id")
 
 
 def main():
     api_key = os.environ['clockify_api_key']
-    workspaceId = os.environ['wID']
+    workspaceId = "61e69d2cdc3256444cefaca4"
     clockify_client = ClockifyClient(api_key)
     
-    all_entries = clockify_client.get_all_time_entries(workspaceId)
+    projects = clockify_client.get_projects(workspaceId)
 
-    print(json.dumps(all_entries, indent = 4))
+    print(json.dumps(projects, indent = 4))
 
 if __name__ == "__main__":
     main()

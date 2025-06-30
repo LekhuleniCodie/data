@@ -1,41 +1,36 @@
 CREATE TABLE projects (
-    	id TEXT PRIMARY KEY,
-    	name TEXT,
-    	hourly_rate_amount FLOAT,
-    	hourly_rate_currency TEXT,
-    	client_id TEXT,
-    	client_name TEXT,
-    	workspace_id TEXT,
-    	billable BOOLEAN,
-    	color TEXT,
-    
-    	estimate TEXT,
-    	estimate_type TEXT,
-    	
-    	archived BOOLEAN,
-    	duration TEXT,
-    	note TEXT,
-    	cost_rate FLOAT,
-
-    	time_estimate_duration TEXT,
-    	time_estimate_type TEXT,
-    	time_estimate_reset_option TEXT,
-    	time_estimate_active BOOLEAN,
-    	time_estimate_include_non_billable BOOLEAN,
-
-    	budget_estimate FLOAT, 
-    	estimate_reset FLOAT,
-    	template BOOLEAN,
-    	public BOOLEAN,
-
-    
-    	membership_user_id TEXT,
-    	membership_hourly_rate FLOAT,
-    	membership_cost_rate FLOAT,
-    	membership_target_id TEXT,
-    	membership_type TEXT,
-    	membership_status TEXT
+		id TEXT PRIMARY KEY,
+		name TEXT,
+		client_id TEXT,
+		workspace_id TEXT,
+		billable BOOLEAN,
+		color TEXT,
+		archived BOOLEAN,
+		duration INTERVAL,
+		client_name TEXT,
+		note TEXT,
+		cost_rate FLOAT,
+		budget_estimate FLOAT,
+		estimate_reset FLOAT,
+		template BOOLEAN,
+		public BOOLEAN,
+		hourly_rate_amount FLOAT,
+		hourly_rate_currency TEXT,
+		estimate_estimate TEXT,
+		estimate_type TEXT,
+		time_estimate_estimate TEXT,
+		time_estimate_type TEXT,
+		time_estimate_reset_option TEXT,
+		time_estimate_active BOOLEAN,
+		time_estimate_include_non_billable BOOLEAN,
+		user_id TEXT,
+		hourly_rate FLOAT,
+		target_id TEXT,
+		membership_type TEXT,
+		membership_status TEXT
 );
+
+
 
 CREATE TABLE timestamps (
 		id TEXT PRIMARY KEY,
@@ -50,8 +45,8 @@ CREATE TABLE timestamps (
 		type_my TEXT,
 		kiosk_id TEXT,
 		is_locked BOOLEAN,
-    	time_interval_start TIMESTAMPZ,
-    	time_interval_end TIMESTAMPZ,
+    	time_interval_start TIMESTAMP,
+    	time_interval_end TIMESTAMP,
     	time_interval_duration INTERVAL,
     	hourly_rate_amount FLOAT,
     	hourly_rate_currency TEXT,
@@ -131,3 +126,4 @@ CREATE TABLE tasks (
 	hourly_rate FLOAT,
 	cost_rate FLOAT
 );
+
