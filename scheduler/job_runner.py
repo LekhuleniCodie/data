@@ -3,11 +3,19 @@ from api_client.clockify_client import ClockifyClient
 from db.postgres_handler import PostgresHandler
 from utils.transformer import Transformer
 import os
+from dotenv import load_dotenv
 import json
 
-api_key = os.environ['clockify_api_key']
-workspaceId = os.environ['w_id']
-db_url = "postgresql://myuser:mypassword@localhost:5432/mydatabase" #needs to be safe
+# api_key = os.environ['clockify_api_key']
+# workspaceId = os.environ['w_id']
+# db_url =  #needs to be safe
+
+load_dotenv()
+
+# Access variables
+api_key = os.getenv("API_KEY")
+workspace_id = os.getenv("WORKSPACE_ID")
+db_url = os.getenv("DB_URL")
 
 clockify_requester = ClockifyClient(api_key)
 transformer = Transformer()
@@ -16,7 +24,7 @@ handler = PostgresHandler(db_url)
 
 @task(log_prints=True)
 def fetch_clients():
-    return clockify_requester.get_clients(workspaceId)
+    return clockify_requester.get_clients(workspace_id)
 
 @task(log_prints=True)
 def process_clients(clients):
@@ -29,7 +37,7 @@ def insert_clients(df_clients):
 
 @task(log_prints=True)
 def fetch_users():
-    return clockify_requester.get_users(workspaceId)
+    return clockify_requester.get_users(workspace_id)
 
 @task(log_prints=True)
 def process_users(users):
@@ -41,7 +49,7 @@ def insert_users(df_users):
 
 @task(log_prints=True)
 def fetch_tasks():
-    return clockify_requester.get_all_tasks(workspaceId)
+    return clockify_requester.get_all_tasks(workspace_id)
 
 @task(log_prints=True)
 def process_tasks(tasks):
@@ -53,7 +61,7 @@ def insert_tasks(df_tasks):
 
 @task(log_prints=True)
 def fetch_entries():
-    return clockify_requester.get_all_time_entries(workspaceId)
+    return clockify_requester.get_all_time_entries(workspace_id)
 
 @task(log_prints=True)
 def process_entries(entries):
@@ -65,7 +73,7 @@ def insert_entries(df_entries):
 
 @task(log_prints=True)
 def fetch_projects():
-    return clockify_requester.get_projects(workspaceId)
+    return clockify_requester.get_projects(workspace_id)
 
 @task(log_prints=True)
 def process_projects(projects):
