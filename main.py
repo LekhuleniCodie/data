@@ -85,13 +85,6 @@ def post_task(task: TaskCreate, project_id: str):
 #     return result
 
 
-@app.put("/clients")
-def update_client(client: ClientUpdate, client_id:str):
-    data = client.model_dump()
-    result = c_client.post_task(workspace_id, client_id, data)
-    if result is None:
-        return {"error": "Failed to create client."}
-    return result
 
 
 @app.put("/clients")
@@ -106,7 +99,7 @@ def update_client(client: ClientUpdate, client_id:str):
 @app.put("/projects")
 def update_project(project: ProjectUpdate, project_id:str):
     data = project.model_dump()
-    result = c_client.post_project(workspace_id, project_id, data)
+    result = c_client.update_project_project(workspace_id, project_id, data)
     if result is None:
         return {"error": "Failed to update project."}
     return result
@@ -115,9 +108,9 @@ def update_project(project: ProjectUpdate, project_id:str):
 @app.put("/tasks")
 def update_tasks(task: TaskUpdate, task_id:str, project_id:str):
     data = task.model_dump()
-    result = c_client.post_task(workspace_id, project_id, task_id, data)
+    result = c_client.update_task(workspace_id, project_id, task_id, data)
     if result is None:
-        return {"error": "Failed to create task."}
+        return {"error": "Failed to update task."}
     return result
 
 
