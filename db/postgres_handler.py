@@ -36,7 +36,7 @@ class PostgresHandler:
 
         qry = qry.on_conflict_do_update(
             index_elements=['id'],
-            set_=update_cols
+            set_=updated_cols
         )
 
 
