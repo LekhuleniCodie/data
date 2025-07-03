@@ -110,9 +110,6 @@ class ClockifyClient:
 
     def _make_post_request(self, url, data, description="Data"):
         try:
-            print("POST headers:", self.headers)
-            print(url)
-
             response = requests.post(url, json=data, headers=self.headers)
             response.raise_for_status()
             print(f"{description} has successfully been posted.")
@@ -124,9 +121,9 @@ class ClockifyClient:
         return None  # if an exception occurs
 
 
-    def post_user(self, workspace_id: str, data: dict):
-        url = f"https://api.clockify.me/api/v1/workspaces/{workspace_id}/users"
-        return self._make_post_request(url, data, description="User")
+    # def post_user(self, workspace_id: str, data: dict):
+    #     url = f"https://api.clockify.me/api/v1/workspaces/{workspace_id}/users"
+    #     return self._make_post_request(url, data, description="User")
 
 
     def post_client(self, workspace_id: str, data: dict):
@@ -142,9 +139,34 @@ class ClockifyClient:
         url = f"https://api.clockify.me/api/v1/workspaces/{workspace_id}/projects/{project_id}/tasks"
         return self._make_post_request(url, data, description="Task")
 
-    def post_time_entry(self, workspace_id: str, user_id: str, data: dict):
-        url = f"https://api.clockify.me/api/v1/workspaces/{workspace_id}/user/{user_id}/time-entries"
-        return self._make_post_request(url, data, description="Time Entry")
+    # def post_time_entry(self, workspace_id: str, user_id: str, data: dict):
+    #     url = f"https://api.clockify.me/api/v1/workspaces/{workspace_id}/user/{user_id}/time-entries"
+    #     return self._make_post_request(url, data, description="Time Entry")
+
+
+    def _make_put_request(self, url, data, description="Data"):
+        try:
+            response = requests.put(url, json=data, headers=self.headers)
+            response.raise_for_status()
+            print(f"{description} has successfully been updated.")
+            return response.json()  # return json only if sucessdul
+
+        except requests.exceptions.RequestException as err:
+            print(response.text)
+
+        return None  # if an exception occurs
+    
+    def update_client(self, workspace_id: str, client_id: str, data: dict):
+        url = f"https://api.clockify.me/api/v1/workspaces/{workspace_id}/clients/{client_id}"
+        return self._make_put_request(url, data, description="Client")
+    
+    def update_project(self, workspace_id: str, project_id: str, data: dict):
+        url = f"https://api.clockify.me/api/v1/workspaces/{workspace_id}/projects/{project_id}"
+        return self._make_put_request(url, data, description="Client")
+    
+    def update_task(self, workspace_id: str, project_id: str, task_id: str, data: dict):
+        url = f"https://api.clockify.me/api/v1/workspaces/{workspace_id}/projects/{project_id}/tasks/{task_id}"
+        return self._make_put_request(url, data, description="Client")
 
 
 def main():

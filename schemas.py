@@ -11,10 +11,18 @@ class ClientCreate(BaseModel):
     name: str
     note: Optional[str] = None
 
+class ClientUpdate(BaseModel):
+    address: Optional[str] = None
+    archived: Optional[bool] = None
+    currencyId: Optional[str] = None
+    email: Optional[str] = None
+    name: Optional[str] = None
+    note: Optional[str] = None
 
 
-class UserCreate(BaseModel):
-    email: EmailStr
+
+# class UserCreate(BaseModel):
+#     email: EmailStr
 
 class Status(StrEnum):
     ACTIVE = "ACTIVE"
@@ -34,41 +42,51 @@ class TaskCreate(BaseModel):
     status: Optional[Status] = None
     userGroupIds: Optional[List[str]] = None
 
-
-
-class CustomAttribute(BaseModel):
+class TaskUpdate(BaseModel):
+    assigneeIds: Optional[List[str]]
+    billable: Optional[bool]
+    budgetEstimate: Optional[int]
+    estimate: Optional[str]
     name: str
-    namespace: str
-    value: str
+    status: Optional[Status]
+    userGroupIds: Optional[List[str]]
 
 
-class SourceType(StrEnum):
-    WORKSPACE = "WORKSPACE"
-    PROJECT = "PROJECT"
-    TIMEENTRY = "TIMEENTRY"
 
 
-class CustomField(BaseModel):
-    customFieldId: str
-    sourceType: SourceType
-    value: str
-
-class Type(StrEnum):
-    REGULAR = "REGULAR"
-    BREAK = "BREAK"
+# class CustomAttribute(BaseModel):
+#     name: str
+#     namespace: str
+#     value: str
 
 
-class TimeEntryCreate(BaseModel):
-    billable: Optional[bool] = None
-    customAttributes: Optional[List["CustomAttribute"]] = None
-    customFields: Optional[List["CustomField"]] = None
-    description: str 
-    end: str          
-    projectId: str    
-    start: str        
-    tagIds: Optional[List[str]] = None
-    taskId: Optional[str] = None
-    type: "Type"      
+# class SourceType(StrEnum):
+#     WORKSPACE = "WORKSPACE"
+#     PROJECT = "PROJECT"
+#     TIMEENTRY = "TIMEENTRY"
+
+
+# class CustomField(BaseModel):
+#     customFieldId: str
+#     sourceType: SourceType
+#     value: str
+
+# class Type(StrEnum):
+#     REGULAR = "REGULAR"
+#     BREAK = "BREAK"
+
+
+# class TimeEntryCreate(BaseModel):
+#     billable: Optional[bool] = None
+#     customAttributes: Optional[List["CustomAttribute"]] = None
+#     customFields: Optional[List["CustomField"]] = None
+#     description: str 
+#     end: str          
+#     projectId: str    
+#     start: str        
+#     tagIds: Optional[List[str]] = None
+#     taskId: Optional[str] = None
+#     type: "Type"      
 
 
 class RateInfo(BaseModel):
@@ -129,7 +147,18 @@ class ProjectCreate(BaseModel):
 
 
     class Config:
-        allow_population_by_field_name = True  
+        allow_population_by_field_name = True
+
+class ProjectUpdate(BaseModel):
+    archived: Optional[bool]
+    billable: Optional[bool]
+    clientId: Optional[str]
+    color: Optional[str]
+    costRate: Optional[RateInfo]
+    hourlyRate: Optional[RateInfo]
+    isPublic: Optional[bool]
+    name: Optional[str]
+    note: Optional[str]
 
 
-# Example usage:
+

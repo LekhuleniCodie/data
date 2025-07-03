@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from schemas import ClientCreate, UserCreate, Status, TaskCreate, CustomAttribute, SourceType, CustomField, Type, TimeEntryCreate, RateInfo, Membership, Estimate, ProjectTask, ProjectCreate
+from schemas import ClientCreate, ClientUpdate, Status, TaskCreate, TaskUpdate, RateInfo, Membership, Estimate, ProjectTask, ProjectCreate, ProjectUpdate
 from api_client.clockify_client import ClockifyClient
 import os
 import requests
@@ -42,18 +42,18 @@ def get_tasks():
 def get_time_entries():
     return c_client.get_all_time_entries(workspace_id)
 
-@app.post("/users")
-def post_user(user: UserCreate):
-    data = user.dict()
-    result = c_client.post_user(workspace_id, data)
-    if result is None:
-        return {"error": "Failed to create user."}
-    return result
+# @app.post("/users")
+# def post_user(user: UserCreate):
+#     data = user.dict()
+#     result = c_client.post_user(workspace_id, data)
+#     if result is None:
+#         return {"error": "Failed to create user."}
+#     return result
 
 
 @app.post("/clients")
 def post_client(client: ClientCreate):
-    data = client.dict()
+    data = client.model_dump()
     result = c_client.post_client(workspace_id, data)
     if result is None:
         return {"error": "Failed to create client."}
@@ -61,7 +61,7 @@ def post_client(client: ClientCreate):
 
 @app.post("/projects")
 def post_project(project: ProjectCreate):
-    data = project.dict()
+    data = project.model_dump()
     result = c_client.post_project(workspace_id, data)
     if result is None:
         return {"error": "Failed to create client."}
@@ -69,20 +69,59 @@ def post_project(project: ProjectCreate):
 
 @app.post("/tasks")
 def post_task(task: TaskCreate, project_id: str):
-    data = task.dict()
+    data = task.model_dump()
     result = c_client.post_task(workspace_id, project_id, data)
     if result is None:
         return {"error": "Failed to create client."}
     return result
 
 
-@app.post("/time_entries")
-def post_time_entry(time_entry: TimeEntryCreate, user_id: str):
-    data = time_entry.dict()
-    result = c_client.post_time_entry(workspace_id, user_id, data)
+# @app.post("/time_entries")
+# def post_time_entry(time_entry: TimeEntryCreate, user_id: str):
+#     data = time_entry.dict()
+#     result = c_client.post_time_entry(workspace_id, user_id, data)
+#     if result is None:
+#         return {"error": "Failed to create client."}
+#     return result
+
+
+@app.put("/clients")
+def update_client(client: ClientUpdate, client_id:str):
+    data = client.model_dump()
+    result = c_client.post_task(workspace_id, client_id, data)
     if result is None:
         return {"error": "Failed to create client."}
     return result
+
+
+@app.put("/clients")
+def update_client(client: ClientUpdate, client_id:str):
+    data = client.model_dump()
+    result = c_client.update_client(workspace_id, client_id, data)
+    if result is None:
+        return {"error": "Failed to update client."}
+    return result
+
+
+@app.put("/projects")
+def update_project(project: ProjectUpdate, project_id:str):
+    data = project.model_dump()
+    result = c_client.post_project(workspace_id, project_id, data)
+    if result is None:
+        return {"error": "Failed to update project."}
+    return result
+
+
+@app.put("/tasks")
+def update_tasks(task: TaskUpdate, task_id:str, project_id:str):
+    data = task.model_dump()
+    result = c_client.post_task(workspace_id, project_id, task_id, data)
+    if result is None:
+        return {"error": "Failed to create task."}
+    return result
+
+
+
 
 
 
