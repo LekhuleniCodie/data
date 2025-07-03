@@ -99,7 +99,7 @@ def update_client(client: ClientUpdate, client_id:str):
 @app.put("/projects")
 def update_project(project: ProjectUpdate, project_id:str):
     data = project.model_dump()
-    result = c_client.update_project_project(workspace_id, project_id, data)
+    result = c_client.update_project(workspace_id, project_id, data)
     if result is None:
         return {"error": "Failed to update project."}
     return result
