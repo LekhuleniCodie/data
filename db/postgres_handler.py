@@ -26,7 +26,19 @@ class PostgresHandler:
 
         qry = insert(mod_class).values(records)
         #duplicate keys?
-        qry = qry.on_conflict_do_nothing(index_elements=['id'])
+        
+        updated_cols = {}
+
+        for col in mod_class.__table__.columns:
+            if col.name != "id":  
+                updated_cols[col.name] = qry.excluded[col.name]
+
+
+        qry = qry.on_conflict_do_update(
+            index_elements=['id'],
+            set_=update_cols
+        )
+
 
         with self.SessionLocal() as session:
             result = session.execute(qry) #execute query

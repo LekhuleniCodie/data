@@ -7,8 +7,14 @@ class ClockifyClient:
     def __init__(self, api_key):
         #storing the api key in the headers, needed for all requests
         self.headers = {
-            "x-Api-Key": api_key
+            "x-api-key": api_key,
+            "Content-Type": "application/json",
         }
+
+
+    """
+    Functions for making get requests.
+    """
 
     def _make_get_request(self, url, description="Data"):
         """
@@ -20,19 +26,10 @@ class ClockifyClient:
             print(f"Request for {description} successfully retrieved.")
             return response.json()
 
-        except requests.exceptions.HTTPError as http_err:
-            print(f"HTTP error while getting {description}: {http_err}")
-
-        except requests.exceptions.ConnectionError as conn_err:
-            print(f"Connection issue while getting {description}: {conn_err}")
-
-        except requests.exceptions.Timeout as timeout_err:
-            print(f"Took too long to respond while getting {description}: {timeout_err}")
-
         except requests.exceptions.RequestException as err:
-            print(f"Something unexpected happened while getting {description}: {err}")
+            print(f"Error while posting {description}: {err}")
 
-        return None  # If it fails, just return nothing
+        return response.json()  # If it fails, just return nothing
 
     def get_users(self, workspaceId):
         # Pull all users in a given workspace
@@ -98,7 +95,7 @@ class ClockifyClient:
                 tasks = self.get_tasks(workspaceId,project_id)  # tasks is a list
                 all_tasks.extend(tasks)        # appends each task individually, greatest discovery today!!!
 
-        return all_tasks
+        return all_tasks # 
 
     def get_workspace_id(self):
         """
@@ -106,6 +103,48 @@ class ClockifyClient:
         """
         url = f"https://api.clockify.me/api/v1/workspaces"
         return self._make_get_request(url, description = "workspace id")
+
+    """
+    Functions for making post requests
+    """
+
+    def _make_post_request(self, url, data, description="Data"):
+        try:
+            print("POST headers:", self.headers)
+            print(url)
+
+            response = requests.post(url, json=data, headers=self.headers)
+            response.raise_for_status()
+            print(f"{description} has successfully been posted.")
+            return response.json()  # return json only if sucessdul
+
+        except requests.exceptions.RequestException as err:
+            print(response.text)
+
+        return None  # if an exception occurs
+
+
+    def post_user(self, workspace_id: str, data: dict):
+        url = f"https://api.clockify.me/api/v1/workspaces/{workspace_id}/users"
+        return self._make_post_request(url, data, description="User")
+
+
+    def post_client(self, workspace_id: str, data: dict):
+        url = f"https://api.clockify.me/api/v1/workspaces/{workspace_id}/clients"
+        return self._make_post_request(url, data, description="Client")
+
+    def post_project(self, workspace_id: str, data: dict):
+        url = f"https://api.clockify.me/api/v1/workspaces/{workspace_id}/projects"
+        return self._make_post_request(url, data, description="Project")
+
+
+    def post_task(self, workspace_id: str, project_id: str, data: dict):
+        url = f"https://api.clockify.me/api/v1/workspaces/{workspace_id}/projects/{project_id}/tasks"
+        return self._make_post_request(url, data, description="Task")
+
+    def post_time_entry(self, workspace_id: str, user_id: str, data: dict):
+        url = f"https://api.clockify.me/api/v1/workspaces/{workspace_id}/user/{user_id}/time-entries"
+        return self._make_post_request(url, data, description="Time Entry")
 
 
 def main():

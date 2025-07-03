@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    env_file: .env
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "7999:7999"
+
+  web:
+    build: .
+    command: python main.py
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
