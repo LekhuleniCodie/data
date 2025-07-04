@@ -1,97 +1,117 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session as SessionType
+from sqlalchemy.dialects.postgresql import insert
+from typing import Type, Any
+import pandas as pd
+
 from models import Client, User, Task, TimeEntry, Project
-from sqlalchemy.orm import Session as SessionType  
-from sqlalchemy.dialects.postgresql import insert  
+
 
 class PostgresHandler:
-    """takes in input of dfs and connects to a db then inserts that df to a df"""
+    """
+    Handles PostgreSQL interactions using SQLAlchemy.
+    Provides methods to insert DataFrames into database tables, handling conflict resolution on primary keys.
+    """
 
     def __init__(self, db_conn_url: str):
-        try: #try creating the db conn
+        """
+        Initializes the database engine and session factory.
+
+        Args:
+            db_conn_url (str): The SQLAlchemy connection string to the database.
+        """
+        try:
             self.db_conn_url = db_conn_url
             self.engine = create_engine(self.db_conn_url, echo=False)
             self.SessionLocal = sessionmaker(bind=self.engine)
-            print("db connection initialized successfully")
+            print("DB connection initialized successfully.")
         except Exception as e:
-            print("Failed to initialize db connection")
+            print("Failed to initialize DB connection.")
             print(f"Error: {e}")
-            raise  
+            raise
 
-    def insert_to_db(self, df, mod_class):
-        records = df.to_dict(orient="records") #conversion of the df (cleaned) to a dict
+    def insert_to_db(self, df: pd.DataFrame, mod_class: Type[Any]) -> bool:
+        """
+        Inserts a DataFrame into a specified database table using SQLAlchemy.
 
+        Args:
+            df (pd.DataFrame): The DataFrame to insert.
+            mod_class (Base): SQLAlchemy ORM model class representing the table.
+
+        Returns:
+            bool: True if any rows were affected, False otherwise.
+        """
+        records = df.to_dict(orient="records")
         if not records:
-            return False  # nothing to insert
+            return False
 
         qry = insert(mod_class).values(records)
-        #duplicate keys?
-        
-        updated_cols = {}
 
-        for col in mod_class.__table__.columns:
-            if col.name != "id":  
-                updated_cols[col.name] = qry.excluded[col.name]
-
+        # Define conflict handling: update all columns except 'id'
+        updated_cols = {
+            col.name: qry.excluded[col.name]
+            for col in mod_class.__table__.columns
+            if col.name != "id"
+        }
 
         qry = qry.on_conflict_do_update(
             index_elements=['id'],
             set_=updated_cols
         )
 
-
         with self.SessionLocal() as session:
-            result = session.execute(qry) #execute query
-            session.commit() #store the changes in db
+            result = session.execute(qry)
+            session.commit()
 
-        return result.rowcount > 0 #tells whether the query was sucessful or not
+        return result.rowcount > 0
 
+    def insert_clients(self, df: pd.DataFrame) -> None:
+        """
+        Inserts client records into the database.
 
-    def insert_clients(self, df):
+        Args:
+            df (pd.DataFrame): DataFrame containing client data.
+        """
         result = self.insert_to_db(df, Client)
+        print("Clients insertion success." if result else "Clients insertion failed.")
 
-        if result:
-            print("Clients insertion success.")
-        else:
-            print("Clients insertion failed.")
+    def insert_users(self, df: pd.DataFrame) -> None:
+        """
+        Inserts user records into the database.
 
-        
-
-
-    def insert_users(self, df):
-        """insertion of the users df to db"""
+        Args:
+            df (pd.DataFrame): DataFrame containing user data.
+        """
         result = self.insert_to_db(df, User)
+        print("Users insertion success." if result else "Users insertion failed.")
 
-        if result:
-            print("Users insertion success.")
-        else:
-            print("User insertion failed.")
+    def insert_tasks(self, df: pd.DataFrame) -> None:
+        """
+        Inserts task records into the database.
 
-    
-    def insert_tasks(self, df):
-        """insertion of the tasks df to db"""
+        Args:
+            df (pd.DataFrame): DataFrame containing task data.
+        """
         result = self.insert_to_db(df, Task)
+        print("Tasks insertion success." if result else "Tasks insertion failed.")
 
-        if result:
-            print("Tasks insertion success.")
-        else:
-            print("Tasks insertion failed.")
+    def insert_user_time_entries(self, df: pd.DataFrame) -> None:
+        """
+        Inserts time entry records into the database.
 
-    def insert_user_time_entries(self, df):
-        """insertion of the time_entries df to db"""
+        Args:
+            df (pd.DataFrame): DataFrame containing time entry data.
+        """
         result = self.insert_to_db(df, TimeEntry)
+        print("Time entries insertion success." if result else "Time entries insertion failed.")
 
-        if result:
-            print("Time entries insertion success.")
-        else:
-            print("Time entries insertion failed.")
+    def insert_projects(self, df: pd.DataFrame) -> None:
+        """
+        Inserts project records into the database.
 
-    
-    def insert_projects(self, df):
-        """insertion of the projects df to db"""
+        Args:
+            df (pd.DataFrame): DataFrame containing project data.
+        """
         result = self.insert_to_db(df, Project)
-
-        if result:
-            print("Projects insertion success.")
-        else:
-            print("Projects insertion failed.")
+        print("Projects insertion success." if result else "Projects insertion failed.")

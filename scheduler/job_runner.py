@@ -6,9 +6,21 @@ import os
 from dotenv import load_dotenv
 import json
 
-# api_key = os.environ['clockify_api_key']
-# workspaceId = os.environ['w_id']
-# db_url =  #needs to be safe
+"""
+job_runner.py
+
+This script defines a complete ETL (Extract, Transform, Load) pipeline for integrating data from the Clockify API into a PostgreSQL database using Prefect for orchestration.
+
+The pipeline performs the following steps:
+1. Extracts data from Clockify (clients, users, tasks, time entries, and projects) using the ClockifyClient.
+2. Transforms the raw API data into cleaned pandas DataFrames using the Transformer utility.
+3. Loads the cleaned data into the corresponding PostgreSQL tables via PostgresHandler.
+
+All steps are structured as Prefect tasks, and the entire flow is wrapped in a Prefect flow named "Clockify Full ETL".
+Environment variables (API key, workspace ID, and DB URL) are loaded securely via dotenv.
+
+"""
+
 
 load_dotenv()
 
@@ -86,6 +98,22 @@ def insert_projects(df_projects):
 
 @flow(name="Clockify Full ETL")
 def clockify_etl():
+    """
+    Executes a full ETL (Extract, Transform, Load) pipeline for Clockify data.
+
+    Steps:
+    1. Extract data from the Clockify API:
+        - Clients
+        - Users
+        - Tasks
+        - Time entries
+        - Projects
+    2. Transform the raw data into cleaned, structured DataFrames using custom transformers.
+    3. Load the transformed data into a PostgreSQL database using SQLAlchemy.
+
+    This flow provides a reproducible way to synchronize data from Clockify into
+    a local or remote database for further analysis or integration.
+    """
     # Clients
     clients_raw = fetch_clients()
     df_clients = process_clients(clients_raw)
