@@ -1,0 +1,231 @@
+query Issues {
+  issues {
+    nodes {
+      assignee {
+        id
+      }
+      completedAt
+      createdAt
+      creator {
+        id
+      }
+      id
+      priority
+      project {
+        id
+      }
+      dueDate
+      estimate
+      supervisor {
+        id
+      }
+      needs {
+        nodes {
+          id
+        }
+      }
+      title
+      triagedAt
+      updatedAt
+      addedToProjectAt
+      addedToCycleAt
+      activitySummary
+      addedToTeamAt
+      delegate {
+        id
+      }
+      description
+      startedAt
+      canceledAt
+      snoozedUntilAt
+      snoozedBy {
+        id
+      }
+      startedTriageAt
+    }
+  }
+}
+
+
+________________________________________________________________________
+
+
+query Projects {
+  projects {
+    nodes {
+      creator {
+        id
+        name
+      }
+      description
+      id
+      lead {
+        id
+        name
+      }
+      name
+      scope
+      startDate
+      startedAt
+      status {
+        type
+      }
+      teams {
+        nodes {
+          id
+          name
+        }
+      }
+      priority
+      completedAt
+      createdAt
+      currentProgress
+    }
+  }
+
+}
+
+__________________________________________________________________
+
+query Nodes {
+  customers {
+    nodes {
+      id
+      name
+      owner {
+        id
+      }
+      status {
+        id
+      }
+      tier {
+        id
+      }
+      revenue
+      size
+      createdAt
+      mainSourceId
+      archivedAt
+      updatedAt
+    }
+  }
+}
+
+__________________________________________________________
+
+query Cycles {
+  cycles {
+    nodes {
+      completedAt
+      createdAt
+      description
+      endsAt
+      id
+      isActive
+      name
+      progress
+      number
+      startsAt
+      team {
+        id
+      }
+      updatedAt
+      issues {
+        nodes {
+          id
+        }
+      }
+      progressHistory
+      scopeHistory
+      autoArchivedAt
+      archivedAt
+    }
+  }
+}
+
+__________________________________________________________________________
+
+query Users {
+  users {
+    nodes {
+      id
+      name
+      email
+      teams {
+        nodes {
+          id
+        }
+      }
+      active
+      admin
+      assignedIssues {
+        nodes {
+          id
+        }
+      }
+      description
+      timezone
+      createdAt
+      createdIssueCount
+      createdIssues {
+        nodes {
+          id
+        }
+      }
+      initials
+      statusLabel
+      statusUntilAt
+      supervisedIssues {
+        nodes {
+          id
+        }
+      }
+      archivedAt
+      updatedAt
+    }
+  }
+}
+
+_____________________________________________________________________________________
+
+
+query Teams {
+  teams {
+    nodes {
+      activeCycle {
+        id
+      }
+      createdAt
+      currentProgress
+      cycles {
+        nodes {
+          id
+        }
+      }
+      description
+      id
+      issueCount
+      members {
+        nodes {
+          id
+        }
+      }
+      name
+      projects {
+        nodes {
+          id
+        }
+      }
+      timezone
+      key
+      archivedAt
+      cycleStartDay
+      issues {
+        nodes {
+          id
+        }
+      }
+    }
+  }
+}
+

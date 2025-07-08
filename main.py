@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from schemas import ClientCreate, ClientUpdate, Status, TaskCreate, TaskUpdate, RateInfo, Membership, Estimate, ProjectTask, ProjectCreate, ProjectUpdate
 from api_client.clockify_client import ClockifyClient
+from api_client.linear_client import LinearClient
 import os
 import requests
 from dotenv import load_dotenv
@@ -22,12 +23,14 @@ load_dotenv()
 
 app = FastAPI()
 
-api_key = os.getenv("API_KEY")
+clockify_api_key = os.getenv("API_KEY")
+linear_api_key = os.getenv("LINEAR_API_KEY")
 workspace_id = os.getenv("WORKSPACE_ID")
 db_url = os.getenv("DB_URL")
 
 
-c_client = ClockifyClient(api_key)
+c_client = ClockifyClient(clockify_api_key)
+l_client = LinearClient(linear_api_key)
 # ─────────────────────────────────────────
 # GET Endpoints
 # ─────────────────────────────────────────
@@ -42,7 +45,7 @@ def run_backend_server():
     """
     return {"message": "Welcome to clockfy_clients backend"}
 
-@app.get("/users")
+@app.get("/clockify_users")
 def get_users():
     """
     Retrieve all users in the workspace.
@@ -52,7 +55,7 @@ def get_users():
     """
     return c_client.get_users(workspace_id)
 
-@app.get("/clients")
+@app.get("/clockify_clients")
 def get_clients():
     """
     Retrieve all clients in the workspace.
@@ -62,7 +65,7 @@ def get_clients():
     """
     return c_client.get_clients(workspace_id)
 
-@app.get("/projects")
+@app.get("/clockify_projects")
 def get_projects():
     """
     Retrieve all projects in the workspace.
@@ -72,7 +75,7 @@ def get_projects():
     """
     return c_client.get_projects(workspace_id)
 
-@app.get("/tasks")
+@app.get("/clockify_tasks")
 def get_tasks():
     """
     Retrieve all tasks across all projects in the workspace.
@@ -82,7 +85,7 @@ def get_tasks():
     """
     return c_client.get_all_tasks(workspace_id)
 
-@app.get("/time_entries")
+@app.get("/clockify_time_entries")
 def get_time_entries():
     """
     Retrieve all time entries for all users in the workspace.
@@ -101,7 +104,7 @@ def get_time_entries():
 #     return result
 
 
-@app.post("/clients")
+@app.post("/clockify_clients")
 def post_client(client: ClientCreate):
     """
     Create a new client in the workspace.
@@ -118,7 +121,7 @@ def post_client(client: ClientCreate):
         return {"error": "Failed to create client."}
     return result
 
-@app.post("/projects")
+@app.post("/clockify_projects")
 def post_project(project: ProjectCreate):
     """
     Create a new project in the workspace.
@@ -135,7 +138,7 @@ def post_project(project: ProjectCreate):
         return {"error": "Failed to create client."}
     return result
 
-@app.post("/tasks")
+@app.post("/clockify_tasks")
 def post_task(task: TaskCreate, project_id: str):
     """
     Create a new task within a given project.
@@ -165,7 +168,7 @@ def post_task(task: TaskCreate, project_id: str):
 
 
 
-@app.put("/clients")
+@app.put("/clockify_clients")
 def update_client(client: ClientUpdate, client_id:str):
     """
     Update an existing client.
@@ -184,7 +187,7 @@ def update_client(client: ClientUpdate, client_id:str):
     return result
 
 
-@app.put("/projects")
+@app.put("/clockify_projects")
 def update_project(project: ProjectUpdate, project_id:str):
     """
     Update an existing project.
@@ -204,7 +207,7 @@ def update_project(project: ProjectUpdate, project_id:str):
     return result
 
 
-@app.put("/tasks")
+@app.put("/clockify_tasks")
 def update_tasks(task: TaskUpdate, task_id:str, project_id:str):
     """
     Update a task within a given project.
@@ -222,6 +225,70 @@ def update_tasks(task: TaskUpdate, task_id:str, project_id:str):
     if result is None:
         return {"error": "Failed to update task."}
     return result
+
+
+@app.get("/linear_users")
+def get_clients():
+    response = l_client.query_users()
+
+    if response:
+        return response
+    else:
+        return {"message": "No clients in the linear workspace."}
+
+@app.get("/linear_issues")
+def get_issues():
+    response = l_client.query_issues()
+
+    if response:
+        return response
+    else:
+        return {"message": "No issues in the linear workspace."}
+
+@app.get("/linear_cycles")
+def get_cycles():
+    response = l_client.query_cycles()
+
+    if response:
+        return response
+    else:
+        return {"message": "No cycles in the linear workspace."}
+    
+
+@app.get("/linear_projects")
+def get_projects():
+    response = l_client.query_projects()
+
+    if response:
+        return response
+    else:
+        return {"message": "No projects in the linear workspace."}
+    
+@app.get("/linear_customers")
+def get_cycles():
+    response = l_client.query_customers()
+
+    if response:
+        return response
+    else:
+        return {"message": "No customers in the linear workspace."}
+    
+
+@app.get("/linear_teams")
+def get_cycles():
+    response = l_client.query_teams()
+
+    if response:
+        return response
+    else:
+        return {"message": "No teams in the linear workspace."}
+
+    
+
+
+
+
+
 
 
 

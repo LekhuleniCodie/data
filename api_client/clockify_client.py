@@ -40,7 +40,7 @@ class ClockifyClient:
             return response.json()
         except requests.exceptions.RequestException as err:
             print(f"Error while getting {description}: {err}")
-        return response.json()
+        return None
 
     def get_users(self, workspace_id: str) -> List[Dict[str, Any]]:
         """

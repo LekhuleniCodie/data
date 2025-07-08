@@ -1,10 +1,13 @@
 import json
 import pandas as pd
 import numpy as np
-import numpy as np
 import re
 import isodate
 from datetime import datetime
+from api_client.linear_client import LinearClient
+import os
+
+
 
 
 class Transformer:
@@ -17,7 +20,7 @@ class Transformer:
     column names and parse data formats.
     """
 
-    def process_clients(self, data: dict) -> pd.DataFrame:
+    def process_clockify_clients(self, data: dict) -> pd.DataFrame:
         """
         Transforms raw client JSON data into a cleaned DataFrame.
         
@@ -32,7 +35,7 @@ class Transformer:
         df.columns = [self.camel_to_snake(col) for col in df.columns]
         return df
 
-    def process_projects(self, data: dict) -> pd.DataFrame:
+    def process_clockify_projects(self, data: dict) -> pd.DataFrame:
         """
         Transforms raw project JSON data including nested memberships into a cleaned DataFrame.
         
@@ -62,7 +65,7 @@ class Transformer:
 
         return df_final
 
-    def process_users(self, data: dict) -> pd.DataFrame:
+    def process_clockify_users(self, data: dict) -> pd.DataFrame:
         """
         Transforms raw user JSON data into a cleaned DataFrame.
         
@@ -88,7 +91,7 @@ class Transformer:
         df.columns = [self.camel_to_snake(col_name) for col_name in df.columns]
         return df
 
-    def process_time_entries_in_progress(self, data: dict) -> pd.DataFrame:
+    def process_clockify_time_entries_in_progress(self, data: dict) -> pd.DataFrame:
         """
         Converts in-progress time entry data into a DataFrame (used for status tracking).
         
@@ -101,7 +104,7 @@ class Transformer:
         df = pd.json_normalize(data)
         return df
 
-    def process_time_entries_user(self, data: list[dict]) -> pd.DataFrame:
+    def process_clockify_time_entries_user(self, data: list[dict]) -> pd.DataFrame:
         """
         Transforms raw time entry data into a cleaned DataFrame with datetime and duration handling.
         
@@ -134,7 +137,7 @@ class Transformer:
 
         return df
 
-    def process_tasks(self, data: dict) -> pd.DataFrame:
+    def process_clockify_tasks(self, data: dict) -> pd.DataFrame:
         """
         Transforms raw task JSON data into a cleaned DataFrame.
         
@@ -157,6 +160,73 @@ class Transformer:
         df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
 
         return df
+    
+    ###################################Tranformer for the linear client
+
+    def process_linear_customers(self, data: dict) -> pd.DataFrame: #empty for now
+        df = pd.json_normalize(data, sep="_")
+        df.columns = [self.camel_to_snake(col) for col in df.columns]
+        df[['created_at','archived_at','updated_at']] = df[['created_at','archived_at','updated_at']].apply(
+            pd.to_datetime, errors="coerce"
+        )
+        return df
+    
+    def process_linear_users(self, data: dict) -> pd.DataFrame:
+        df = pd.json_normalize(data, sep="_")
+        df.columns = [self.camel_to_snake(col) for col in df.columns]
+
+        df[['archived_at','status_until_at', 'created_at', 'updated_at']] = df[['archived_at','status_until_at', 'created_at', 'updated_at']].apply(
+            pd.to_datetime, errors="coerce"
+        )
+       
+
+        return df
+    
+    def process_linear_projects(self, data:dict) -> pd.DataFrame:
+        df = pd.json_normalize(data, sep="_")
+        df.columns = [self.camel_to_snake(col) for col in df.columns]
+
+        df[['start_date','started_at', 'completed_at', 'created_at']] = df[['start_date','started_at', 'completed_at', 'created_at']].apply(
+            pd.to_datetime, errors="coerce"
+        )
+
+        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+        return df
+    
+    def process_linear_issues(self, data:dict) -> pd.DataFrame:
+        df = pd.json_normalize(data, sep="_")
+        df.columns = [self.camel_to_snake(col) for col in df.columns]
+        # df[['completed_at','created_at', 'triaged_at', 'updated_at', 'added_to_project_at', 'added_to_cycle_at', 'added_to_team_at', 'started_at', 'canceled_at', 'snoozed_until_at', 'started_triage_at']] = df['time_interval_duration'].apply(self.safe_parse_duration)
+
+        df[['completed_at','created_at', 'triaged_at', 'updated_at', 'added_to_project_at', 'added_to_cycle_at', 'added_to_team_at', 'started_at', 'canceled_at', 'snoozed_until_at', 'started_triage_at', 'due_date']] = df[['completed_at','created_at', 'triaged_at', 'updated_at', 'added_to_project_at', 'added_to_cycle_at', 'added_to_team_at', 'started_at', 'canceled_at', 'snoozed_until_at', 'started_triage_at', 'due_date']].apply(
+            pd.to_datetime, errors="coerce"
+        )
+
+        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+        df["needs_nodes"] = [None if (len(needs) == 0) else needs for needs in df["needs_nodes"]]
+
+        return df
+    
+    def process_linear_cycles(self, data:dict): #empty for now
+        df = pd.json_normalize(data, sep="_")
+        df.columns = [self.camel_to_snake(col) for col in df.columns]
+        df[['completed_at','created_at','ends_at', 'starts_at', 'updated_at', 'archived_at']]=df[['completed_at','created_at','ends_at', 'starts_at', 'updated_at', 'archived_at']].apply(
+            pd.to_datetime, errors="coerce"
+        )   
+        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+        return df
+    
+    def process_linear_teams(self, data:dict):
+        df = pd.json_normalize(data, sep="_")
+        df.columns = [self.camel_to_snake(col) for col in df.columns]
+        df[['created_at','archived_at']]=df[['created_at','archived_at']].apply(
+            pd.to_datetime, errors="coerce"
+        )       
+        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+        return df
+    
+
+
 
     def camel_to_snake(self, name: str) -> str:
         """
@@ -189,7 +259,6 @@ class Transformer:
 
 
 
-    
 
     
     
