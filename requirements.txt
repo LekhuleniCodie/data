@@ -1,7 +1,0 @@
-requests
-pandas
-numpy
-isodate
-sqlalchemy
-psycopg2
-prefect
