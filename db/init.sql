@@ -235,11 +235,6 @@ CREATE TABLE linear_schema.team_issues (
     issue_id BIGINT REFERENCES linear_schema.issues(issue_id)
 );
 
-CREATE TABLE linear_schema.team_cycles (
-    id SERIAL PRIMARY KEY,
-    team_id VARCHAR REFERENCES linear_schema.teams(id),
-    cycle_id VARCHAR REFERENCES linear_schema.cycles(id)
-);
 
 
 CREATE TABLE linear_schema.customers (
@@ -262,9 +257,9 @@ CREATE TABLE linear_schema.cycles (
     description TEXT,
     number INT,
     is_active BOOLEAN,
-    progress JSONB,
-    progress_history JSONB,
-    scope_history JSONB,
+    -- progress JSONB,
+    -- progress_history JSONB,
+    -- scope_history JSONB,
     starts_at TIMESTAMP,
     ends_at TIMESTAMP,
     created_at TIMESTAMP,
@@ -273,4 +268,10 @@ CREATE TABLE linear_schema.cycles (
     auto_archived_at TIMESTAMP,
     archived_at TIMESTAMP,
     team_id VARCHAR REFERENCES linear_schema.teams(team_id)
+);
+
+CREATE TABLE linear_schema.team_cycles (
+    id SERIAL PRIMARY KEY,
+    team_id VARCHAR REFERENCES linear_schema.teams(id),
+    cycle_id VARCHAR REFERENCES linear_schema.cycles(id)
 );

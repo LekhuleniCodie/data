@@ -22,7 +22,7 @@ class Transformer:
 
     def process_clockify_clients(self, data: dict) -> pd.DataFrame:
         """
-        Transforms raw client JSON data into a cleaned DataFrame.
+        Transforms raw clockify clients JSON data into a cleaned DataFrame.
         
         Args:
             data (dict): Raw JSON response from the Clockify clients endpoint.
@@ -32,12 +32,12 @@ class Transformer:
         """
         df = pd.json_normalize(data, sep="_")
         df = df.replace({"": None})
-        df.columns = [self.camel_to_snake(col) for col in df.columns]
+        df.columns = [self.camel_to_snake(col) for col in df.columns] #helper function to convert names from camel case to snake case
         return df
 
     def process_clockify_projects(self, data: dict) -> pd.DataFrame:
         """
-        Transforms raw project JSON data including nested memberships into a cleaned DataFrame.
+        Transforms raw clockify projects JSON data including nested memberships into a cleaned DataFrame.
         
         Args:
             data (dict): Raw JSON response from the Clockify projects endpoint.
@@ -46,28 +46,28 @@ class Transformer:
             pd.DataFrame: Cleaned and structured DataFrame.
         """
         df = pd.json_normalize(data, sep="_")
-        membership_col = df['memberships']
-        m_flat_list = []
+        membership_col = df['memberships'] #membership col extraction
+        m_flat_list = [] #to store the membership details
 
-        for item in membership_col:
+        for item in membership_col: #for each 'array' of membership details, extract the details and extend(cool method/func btw) them to the list
             if isinstance(item, list):
                 m_flat_list.extend(item)
 
-        m_df = pd.DataFrame(m_flat_list)
-        df_final = pd.concat([df, m_df], axis=1)
-        df_final = df_final.drop(columns=['memberships'])
+        m_df = pd.DataFrame(m_flat_list) #membership array to df
+        df_final = pd.concat([df, m_df], axis=1) # (dfs married to each other: you may kiss the bride)
+        df_final = df_final.drop(columns=['memberships']) #
         df_final.columns = [self.camel_to_snake(col_name) for col_name in df_final.columns]
 
         arr = ["budget_estimate", "estimate_reset", "hourly_rate_amount", "hourly_rate", "cost_rate"]
         df_final["hourly_rate_amount"] = df_final["hourly_rate_amount"].astype(float)
         df_final[arr] = df_final[arr].apply(pd.to_numeric, errors='coerce')
-        df_final.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+        df_final.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True) #fix all types of nulls to None(without this? my code broke a lot)
 
         return df_final
 
     def process_clockify_users(self, data: dict) -> pd.DataFrame:
         """
-        Transforms raw user JSON data into a cleaned DataFrame.
+        Transforms raw clockify users JSON data into a cleaned DataFrame.
         
         Args:
             data (dict): Raw JSON response from the Clockify users endpoint.
@@ -80,13 +80,13 @@ class Transformer:
         cast_cols = ['customFields', 'memberships']
         for col in cast_cols:
             if col in df.columns:
-                df[col] = df[col].apply(lambda x: str(x) if isinstance(x, list) else x)
+                df[col] = df[col].apply(lambda x: str(x) if isinstance(x, list) else x) #convert cols to strings
 
         df = df.replace({"": None, "[]": None})
         df.columns = (
             df.columns
             .str.replace("settings_", "", regex=False)
-            .str.replace("ReportSettings", "", regex=False)
+            .str.replace("ReportSettings", "", regex=False) #these were part od the cols header names, had to remove them for readability
         )
         df.columns = [self.camel_to_snake(col_name) for col_name in df.columns]
         return df
@@ -106,7 +106,7 @@ class Transformer:
 
     def process_clockify_time_entries_user(self, data: list[dict]) -> pd.DataFrame:
         """
-        Transforms raw time entry data into a cleaned DataFrame with datetime and duration handling.
+        Transforms raw clcokify time entry data into a cleaned DataFrame with datetime and duration handling.
         
         Args:
             data (list[dict]): List of time entry objects from Clockify API.
@@ -116,24 +116,24 @@ class Transformer:
         """
         df = pd.json_normalize(data, sep="_")
         df = df.rename(columns={"type": "type_my"})
-        df.columns = [self.camel_to_snake(col_name) for col_name in df.columns]
+        df.columns = [self.camel_to_snake(col_name) for col_name in df.columns] #changing the naming convention from camelCase to snake_case
 
-        df[["hourly_rate_amount", "cost_rate_amount"]] = df[["hourly_rate_amount", "cost_rate_amount"]].astype(float)
+        df[["hourly_rate_amount", "cost_rate_amount"]] = df[["hourly_rate_amount", "cost_rate_amount"]].astype(float) #casting to float
 
-        cast_cols = ['tag_ids', 'custom_field_values']
+        cast_cols = ['tag_ids', 'custom_field_values'] #nned to casted to strings
         for col in cast_cols:
             if col in df.columns:
-                df[col] = df[col].apply(lambda x: str(x) if isinstance(x, list) else x)
+                df[col] = df[col].apply(lambda x: str(x) if isinstance(x, list) else x) #casting cols to strings
 
-        df['time_interval_duration'] = df['time_interval_duration'].apply(self.safe_parse_duration)
+        df['time_interval_duration'] = df['time_interval_duration'].apply(self.safe_parse_duration) #convertion from string to duration
 
         df[["time_interval_start", "time_interval_end"]] = df[["time_interval_start", "time_interval_end"]].apply(
             pd.to_datetime, errors="coerce"
         )
         df['time_interval_start'] = df['time_interval_start'].dt.tz_localize(None)
-        df['time_interval_end'] = df['time_interval_end'].dt.tz_localize(None)
+        df['time_interval_end'] = df['time_interval_end'].dt.tz_localize(None) #remove timezones
 
-        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True) #same type of NULL
 
         return df
 
@@ -148,30 +148,48 @@ class Transformer:
             pd.DataFrame: Cleaned and structured DataFrame.
         """
         df = pd.json_normalize(data, sep="_")
-        df.columns = [self.camel_to_snake(col_name) for col_name in df.columns]
-        df[["hourly_rate", "cost_rate"]] = df[["hourly_rate", "cost_rate"]].astype(float)
+        df.columns = [self.camel_to_snake(col_name) for col_name in df.columns] #cols names from camelCase to snake_case
+        df[["hourly_rate", "cost_rate"]] = df[["hourly_rate", "cost_rate"]].astype(float) #casting cols to floats
 
-        cast_cols = ['assignee_ids', 'user_group_ids']
+        cast_cols = ['assignee_ids', 'user_group_ids'] #need to be casted to strings
         for col in cast_cols:
             if col in df.columns:
                 df[col] = df[col].apply(lambda x: str(x) if isinstance(x, list) else x)
 
-        df['duration'] = df['duration'].apply(self.safe_parse_duration)
-        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+        df['duration'] = df['duration'].apply(self.safe_parse_duration) #conversion of strings to duration
+        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True) #NULL must be consistent
 
         return df
     
     ###################################Tranformer for the linear client
 
     def process_linear_customers(self, data: dict) -> pd.DataFrame: #empty for now
+        """
+        Transforms raw  linear customers JSON data into a cleaned DataFrame.
+        
+        Args:
+            data (dict): Raw JSON response from the Linear customers endpoint.
+        
+        Returns:
+            pd.DataFrame: Cleaned and structured DataFrame.
+        """
         df = pd.json_normalize(data, sep="_")
         df.columns = [self.camel_to_snake(col) for col in df.columns]
         df[['created_at','archived_at','updated_at']] = df[['created_at','archived_at','updated_at']].apply(
             pd.to_datetime, errors="coerce"
-        )
+        ) #conversion from strings to time
         return df
     
     def process_linear_users(self, data: dict) -> pd.DataFrame:
+        """
+        Transforms raw  linear users JSON data into a cleaned DataFrame.
+        
+        Args:
+            data (dict): Raw JSON response from the Linear users endpoint.
+        
+        Returns:
+            pd.DataFrame: Cleaned and structured DataFrame.
+        """
         df = pd.json_normalize(data, sep="_")
         df.columns = [self.camel_to_snake(col) for col in df.columns]
 
@@ -186,14 +204,23 @@ class Transformer:
         return df
     
     def process_linear_projects(self, data: dict) -> pd.DataFrame:
+        """
+        Transforms raw  linear projects JSON data into a cleaned DataFrame.
+        
+        Args:
+            data (dict): Raw JSON response from the Linear projects endpoint.
+        
+        Returns:
+            pd.DataFrame: Cleaned and structured DataFrame.
+        """
         df = pd.json_normalize(data, sep="_")
         df.columns = [self.camel_to_snake(col) for col in df.columns]
 
         datetime_cols = ['start_date', 'started_at', 'created_at', 'completed_at']
 
-        # Convert all datetime columns forcibly
+        
         for col in datetime_cols:
-            df[col] = pd.to_datetime(df[col], errors='coerce')
+            df[col] = pd.to_datetime(df[col], errors='coerce') #conversion to date time from string (apply funct could also do the joj ;))
 
         desired_order = [
             "id",
@@ -219,6 +246,15 @@ class Transformer:
         return df
     
     def process_linear_issues(self, data:dict) -> pd.DataFrame:
+        """
+        Transforms raw  linear issues JSON data into a cleaned DataFrame.
+        
+        Args:
+            data (dict): Raw JSON response from the Linear issues endpoint.
+        
+        Returns:
+            pd.DataFrame: Cleaned and structured DataFrame.
+        """
         df = pd.json_normalize(data, sep="_")
         df.columns = [self.camel_to_snake(col) for col in df.columns]
         # df[['completed_at','created_at', 'triaged_at', 'updated_at', 'added_to_project_at', 'added_to_cycle_at', 'added_to_team_at', 'started_at', 'canceled_at', 'snoozed_until_at', 'started_triage_at']] = df['time_interval_duration'].apply(self.safe_parse_duration)
@@ -260,6 +296,15 @@ class Transformer:
         return df
     
     def process_linear_cycles(self, data:dict): #empty for now
+        """
+        Transforms raw  linear cycles JSON data into a cleaned DataFrame.
+        
+        Args:
+            data (dict): Raw JSON response from the Linear cycles endpoint.
+        
+        Returns:
+            pd.DataFrame: Cleaned and structured DataFrame.
+        """
         df = pd.json_normalize(data, sep="_")
         df.columns = [self.camel_to_snake(col) for col in df.columns]
         df[['completed_at','created_at','ends_at', 'starts_at', 'updated_at', 'archived_at']]=df[['completed_at','created_at','ends_at', 'starts_at', 'updated_at', 'archived_at']].apply(
@@ -269,6 +314,15 @@ class Transformer:
         return df
     
     def process_linear_teams(self, data:dict):
+        """
+        Transforms raw  linear teams JSON data into a cleaned DataFrame.
+        
+        Args:
+            data (dict): Raw JSON response from the Linear teams endpoint.
+        
+        Returns:
+            pd.DataFrame: Cleaned and structured DataFrame.
+        """
         df = pd.json_normalize(data, sep="_")
         df.columns = [self.camel_to_snake(col) for col in df.columns]
 

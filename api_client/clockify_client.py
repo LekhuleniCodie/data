@@ -34,11 +34,11 @@ class ClockifyClient:
             dict or list: Parsed JSON response from the API.
         """
         try:
-            response = requests.get(url, headers=self.headers)
-            response.raise_for_status()
+            response = requests.get(url, headers=self.headers) #all clockify get requests will pass through this function, so make get request
+            response.raise_for_status() #if response is not code 2xx, give me an error
             print(f"Request for {description} successfully retrieved.")
             return response.json()
-        except requests.exceptions.RequestException as err:
+        except requests.exceptions.RequestException as err: #all exceptions here
             print(f"Error while getting {description}: {err}")
         return None
 
@@ -192,6 +192,7 @@ class ClockifyClient:
         Returns:
             Optional[Dict[str, Any]]: Response from the server if successful.
         """
+        #all clockify post requests pass here
         try:
             response = requests.post(url, json=data, headers=self.headers)
             response.raise_for_status()
@@ -256,6 +257,7 @@ class ClockifyClient:
         Returns:
             Optional[Dict[str, Any]]: Updated object if successful.
         """
+        #all clockify posts requests pass here
         try:
             response = requests.put(url, json=data, headers=self.headers)
             response.raise_for_status()

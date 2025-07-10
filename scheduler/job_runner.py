@@ -248,6 +248,22 @@ def insert_linear_issues(df_issues):
 
 @flow(name="Linear Full ETL")
 def linear_etl():
+    """
+    Executes a full ETL (Extract, Transform, Load) pipeline for Linear data.
+
+    Steps:
+    1. Extract data from the Clockify API:
+        - Users
+        - Teams
+        - Issues
+        - Projects
+        - Cycles and Customers are still pending..
+    2. Transform the raw data into cleaned, structured DataFrames using custom transformers.
+    3. Load the transformed data into a PostgreSQL database using SQLAlchemy.
+
+    This flow provides a reproducible way to synchronize data from Linear into
+    a local or remote database for further analysis or integration.
+    """
     # Users
     raw_users = query_linear_clients()
     df_users = process_linear_users(raw_users)

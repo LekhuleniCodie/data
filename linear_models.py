@@ -74,7 +74,7 @@ class Cycle(Base):
     __tablename__ = 'cycles'
     __table_args__ = {'schema': 'linear_schema'}
 
-    cycle_id = Column(String, primary_key=True)
+    id = Column(String, primary_key=True)
     name = Column(String)
     description = Column(String)
     number = Column(Integer)

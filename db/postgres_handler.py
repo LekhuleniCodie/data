@@ -22,6 +22,7 @@ class PostgresHandler:
         Args:
             db_conn_url (str): The SQLAlchemy connection string to the database.
         """
+        #connection creation
         try:
             self.db_conn_url = db_conn_url
             self.engine = create_engine(self.db_conn_url, echo=False)
@@ -49,12 +50,14 @@ class PostgresHandler:
 
         qry = insert(mod_class).values(records)
 
-        # Define conflict handling: update all columns except 'id'
+        # extractiion of all columns to be updated except for the id
         updated_cols = {
             col.name: qry.excluded[col.name]
             for col in mod_class.__table__.columns
             if col.name != "id"
         }
+
+        #when the ids are clasing? update with pleasure!!!
 
         qry = qry.on_conflict_do_update(
             index_elements=['id'],
@@ -66,6 +69,8 @@ class PostgresHandler:
             session.commit()
 
         return result.rowcount > 0
+    
+    # all the methods below make use of the method above
 
     def insert_clockify_clients(self, df: pd.DataFrame) -> None:
         """
@@ -84,7 +89,7 @@ class PostgresHandler:
         Args:
             df (pd.DataFrame): DataFrame containing user data.
         """
-        result = self.insert_to_db(df, clockify_models.User)
+        result = self.insert_to_db(df, clockify_models.User) #db insertion to the users table in the clockify_schema
         print("Users insertion success." if result else "Users insertion failed.")
 
     def insert_clockify_tasks(self, df: pd.DataFrame) -> None:
@@ -94,7 +99,7 @@ class PostgresHandler:
         Args:
             df (pd.DataFrame): DataFrame containing task data.
         """
-        result = self.insert_to_db(df, clockify_models.Task)
+        result = self.insert_to_db(df, clockify_models.Task) #db insertion to the tasks table in the clockify_schema
         print("Tasks insertion success." if result else "Tasks insertion failed.")
 
     def insert_clockify_user_time_entries(self, df: pd.DataFrame) -> None:
@@ -104,7 +109,7 @@ class PostgresHandler:
         Args:
             df (pd.DataFrame): DataFrame containing time entry data.
         """
-        result = self.insert_to_db(df, clockify_models.TimeEntry)
+        result = self.insert_to_db(df, clockify_models.TimeEntry) #db insertion to the time_entries table in the clockify_schema
         print("Time entries insertion success." if result else "Time entries insertion failed.")
 
     def insert_clockify_projects(self, df: pd.DataFrame) -> None:
@@ -114,7 +119,7 @@ class PostgresHandler:
         Args:
             df (pd.DataFrame): DataFrame containing project data.
         """
-        result = self.insert_to_db(df, clockify_models.Project)
+        result = self.insert_to_db(df, clockify_models.Project) #db insertion to the projects table in the clockify_schema
         print("Projects insertion success." if result else "Projects insertion failed.")
 
 
@@ -129,7 +134,7 @@ class PostgresHandler:
             df(pd.DataFrame): a dataframe containing linear users data
         
         """
-        result = self.insert_to_db(df, linear_models.User)
+        result = self.insert_to_db(df, linear_models.User) #insertion to the users table in the the linear_schema
         print("Linear users success." if result else "Projects insertion failed.")
 
 
@@ -141,30 +146,29 @@ class PostgresHandler:
             df(pd.DataFrame): a dataframe containing linear projects data
         
         """
-        team_project_list = []
+        team_project_list = [] #array that will store a dict of key-value pairs of team_id and project_id
 
-        for _, row in df.iterrows():
-            project_id = row["id"]
-            teams_in_project = row["teams_nodes"]
+        for _, row in df.iterrows(): #df rows iteration
+            project_id = row["id"] #extract project id
+            teams_in_project = row["teams_nodes"] #extract the list of teams in a specific project ie row
             for team in teams_in_project:
                 team_id = team["id"]
-                team_project_list.append({
+                team_project_list.append({ #appending to array the key-value pairs of the team_id and the project_id
                     "team_id": team_id,
                     "project_id": project_id
                 })
 
 
-        team_project_df = pd.DataFrame(team_project_list)
+        team_project_df = pd.DataFrame(team_project_list) #convert dict to df (consistency purposes of the pipeline (JSOON -> df -> PostgreSQL))
 
-        df = df.drop("teams_nodes", axis=1)
+        df = df.drop("teams_nodes", axis=1) #remove the teams col in the df (preparation for insertion to db)
 
-        if self.insert_to_db(df, linear_models.Project):
+        if self.insert_to_db(df, linear_models.Project): #insertion to the projects table in the the linear_schema
             print("Linear projects insertion success.")
         else:
             print("Linear projects insertion failed.")
 
-        self.insert_to_db(df, linear_models.Project)
-        if self.insert_to_db(team_project_df, linear_models.TeamProject):
+        if self.insert_to_db(team_project_df, linear_models.TeamProject): #insertion to the TeamProjects table in the linear schema
             print("Linear team-projects insertion success.")
         else:
             print("Linear team-projects insertion failed.")
@@ -177,43 +181,67 @@ class PostgresHandler:
             df(pd.DataFrame): a dataframe containing linear projects data
         
         """
-        team_members_list = []
+        team_members_list = [] #array to store key-value pairs of a member and the team they belong to
 
-        for _, row in df.iterrows():
-            team_id = row["id"]
-            users_in_team = row["members_nodes"]
+        for _, row in df.iterrows(): #rows of the df itteration
+            team_id = row["id"] #extract team id
+            users_in_team = row["members_nodes"] #extract users in a specific team
 
-            for user in users_in_team:
+            for user in users_in_team: 
                 user_id = user["id"]
-                team_members_list.append({
+                team_members_list.append({ #append key value pair of user_id and team_id
                     "user_id" : user_id, 
                     "team_id" : team_id
                 })
         team_users_df = pd.DataFrame(team_members_list)
 
-        df = df.drop("members_nodes", axis=1)
+        df = df.drop("members_nodes", axis=1) #
 
-        if self.insert_to_db(df, linear_models.Team):
+        if self.insert_to_db(df, linear_models.Team): #db insertion in the teams table in the linear_schema
             print("Linear teams insertion success.")
         else:
             print("Linear teams insertion failed")
 
-        if self.insert_to_db(team_users_df, linear_models.TeamMember):
+        if self.insert_to_db(team_users_df, linear_models.TeamMember): #db insertion in the team_members table in the linear_schema
             print("Linear team-members insertion success.")
         else:
             print("Linear team-members insertion failed.")
 
     def insert_linear_issues(self, df: pd.DataFrame):
-        if self.insert_to_db(df, linear_models.Issue):
+        """Inserts Linear issues into a database.
+
+        Args:
+            df(pd.DataFrame): a dataframe containing linear issues data
+        
+        """
+        if self.insert_to_db(df, linear_models.Issue): #db insertion to the issues table in the linear_schema
             print("Linear issues insertion success.")
         else:
             print("Linear issues insertion failed.")
 
+
+    #no data in Linear yet! To be tested after the receipt of data
     def insert_linear_cycle(self, df: pd.DataFrame):
+        """Inserts Linear cycles into a database.
+
+        Args:
+            df(pd.DataFrame): a dataframe containing linear cycles data
+        
+        """
+        if self.insert_to_db(df, linear_models.Issue):
+            print("Linear issues insertion success.")
+        else:
+            print("Linear issues insertion failed.")
         result = self.insert_to_db(df, linear_models.Cycle)
 
 
     def insert_linear_customers(self, df: pd.DataFrame):
+        """Inserts Linear customers into a database.
+
+        Args:
+            df(pd.DataFrame): a dataframe containing linear customers data
+        
+        """
         result = self.insert_to_db(df, linear_models.Customer)
             
         
