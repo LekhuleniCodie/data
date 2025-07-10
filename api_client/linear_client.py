@@ -43,9 +43,9 @@ class LinearClient:
                 revenue
                 size
                 createdAt
-                mainSourceId
-                archivedAt
                 updatedAt
+                archivedAt
+                mainSourceId
                 }
             }
             }            
@@ -65,39 +65,33 @@ class LinearClient:
                 id
                 name
                 email
+                description
                 active
                 admin
-                description
                 timezone
                 createdAt
-                createdIssueCount
-                initials
+                updatedAt
+                archivedAt
                 statusLabel
                 statusUntilAt
-                archivedAt
-                updatedAt
+                initials
                 }
             }
             }
         """
         result = self._query_data(qry, description="Users")        
         if result["data"]["users"]["nodes"]:
-            return result 
+            return result ["data"]["users"]["nodes"]
 
         return None
     
-    def query_projects(self):
+    def query_projects(self): #this is where I will link projects to teams
         qry = """
             query Projects {
             projects {
                 nodes {
-                creator {
-                    id
-                    name
-                }
-                description
                 id
-                lead {
+                creator {
                     id
                     name
                 }
@@ -105,6 +99,14 @@ class LinearClient:
                 scope
                 startDate
                 startedAt
+                createdAt
+                completedAt
+                lead {
+                    id
+                    name
+                }
+                description
+                priority
                 status {
                     type
                 }
@@ -114,9 +116,6 @@ class LinearClient:
                     name
                     }
                 }
-                priority
-                completedAt
-                createdAt
                 }
             }
 
@@ -125,7 +124,7 @@ class LinearClient:
 
         result = self._query_data(qry, description="Projects")        
         if result["data"]["projects"]["nodes"]:
-            return result 
+            return result ["data"]["projects"]["nodes"]
 
         return None
     
@@ -161,6 +160,12 @@ class LinearClient:
                     id
                     }
                 }
+                team {
+                    id
+                }
+                project {
+                    id
+                }
                 title
                 triagedAt
                 updatedAt
@@ -186,7 +191,7 @@ class LinearClient:
         """
         result = self._query_data(qry, description="Issues")        
         if result["data"]["issues"]["nodes"]:
-            return result 
+            return result["data"]["issues"]["nodes"]
 
         return None
     
@@ -209,6 +214,14 @@ class LinearClient:
                     id
                 }
                 updatedAt
+                issues {
+                    nodes {
+                    id
+                    }
+                }
+                team {
+                    id
+                }
                 issues {
                     nodes {
                     id
@@ -237,28 +250,19 @@ class LinearClient:
             query Teams {
             teams {
                 nodes {
-                activeCycle {
-                    id
-                }
-                createdAt
-                description
                 id
-                issueCount
+                name
+                description
+                timezone
+                key
+                cycleStartDay
+                createdAt
+                archivedAt
                 members {
                     nodes {
                     id
                     }
                 }
-                name
-                projects {
-                    nodes {
-                    id
-                    }
-                }
-                timezone
-                key
-                archivedAt
-                cycleStartDay
                 }
             }
             }
@@ -266,7 +270,7 @@ class LinearClient:
 
         result = self._query_data(qry, description="Teams")        
         if result["data"]["teams"]["nodes"]:
-            return result 
+            return result ["data"]["teams"]["nodes"]
 
         return None
 

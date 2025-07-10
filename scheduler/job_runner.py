@@ -1,5 +1,6 @@
 from prefect import task, flow
 from api_client.clockify_client import ClockifyClient
+from api_client.linear_client import LinearClient
 from db.postgres_handler import PostgresHandler
 from utils.transformer import Transformer
 import os
@@ -25,11 +26,13 @@ Environment variables (API key, workspace ID, and DB URL) are loaded securely vi
 load_dotenv()
 
 # Access variables
-api_key = os.getenv("API_KEY")
+clockify_api_key = os.getenv("API_KEY")
+linear_api_key = os.getenv("LINEAR_API_KEY")
 workspace_id = os.getenv("WORKSPACE_ID")
-db_url = os.getenv("DB_URL")
+db_url = "postgresql+psycopg2://postgres:%40Admin2025@localhost:5432/linear_clockify_db"
 
-clockify_requester = ClockifyClient(api_key)
+clockify_requester = ClockifyClient(clockify_api_key)
+linear_requester = LinearClient(linear_api_key)
 transformer = Transformer()
 handler = PostgresHandler(db_url)
 
@@ -40,11 +43,11 @@ def fetch_clients():
 
 @task(log_prints=True)
 def process_clients(clients):
-    return transformer.process_clients(clients)
+    return transformer.process_clockify_clients(clients)
 
 @task(log_prints=True)
 def insert_clients(df_clients):
-    handler.insert_clients(df_clients)
+    handler.insert_clockify_clients(df_clients)
 
 
 @task(log_prints=True)
@@ -53,11 +56,11 @@ def fetch_users():
 
 @task(log_prints=True)
 def process_users(users):
-    return transformer.process_users(users)
+    return transformer.process_clockify_users(users)
 
 @task(log_prints=True)
 def insert_users(df_users):
-    handler.insert_users(df_users)
+    handler.insert_clockify_users(df_users)
 
 @task(log_prints=True)
 def fetch_tasks():
@@ -65,11 +68,11 @@ def fetch_tasks():
 
 @task(log_prints=True)
 def process_tasks(tasks):
-    return transformer.process_tasks(tasks)
+    return transformer.process_clockify_tasks(tasks)
 
 @task(log_prints=True)
 def insert_tasks(df_tasks):
-    handler.insert_tasks(df_tasks)
+    handler.insert_clockify_tasks(df_tasks)
 
 @task(log_prints=True)
 def fetch_entries():
@@ -77,11 +80,11 @@ def fetch_entries():
 
 @task(log_prints=True)
 def process_entries(entries):
-    return transformer.process_time_entries_user(entries)
+    return transformer.process_clockify_time_entries_user(entries)
 
 @task(log_prints=True)
 def insert_entries(df_entries):
-    handler.insert_user_time_entries(df_entries)
+    handler.insert_clockify_user_time_entries(df_entries)
 
 @task(log_prints=True)
 def fetch_projects():
@@ -89,11 +92,61 @@ def fetch_projects():
 
 @task(log_prints=True)
 def process_projects(projects):
-    return transformer.process_projects(projects)
+    return transformer.process_clockify_projects(projects)
 
 @task(log_prints=True)
 def insert_projects(df_projects):
-    handler.insert_projects(df_projects)
+    handler.insert_clockify_projects(df_projects)
+
+@task(log_prints=True)
+def query_linear_clients():
+    return linear_requester.query_users()
+
+@task(log_prints=True)
+def process_linear_users(users):
+    return transformer.process_linear_users(df_users)
+
+@task 
+def insert_linear_users(df_users):
+    return handler.insert_linear_users(df_users)
+
+@task(log_prints=True)
+def query_linear_projects():
+    return linear_requester.query_projects()
+
+@task(log_prints=True)
+def process_linear_projects(projects):
+    return transformer.process_linear_projects(projects)
+
+@task
+def insert_linear_projects(df_projects):
+    return handler.insert_linear_projects(df_projects)
+
+
+@task(log_prints=True)
+def query_linear_teams():
+    return linear_requester.query_teams()
+
+@task(log_prints=True)
+def process_linear_teams(teams):
+    return transformer.process_linear_teams(teams)
+
+@task
+def insert_linear_teams(df_teams):
+    return handler.insert_linear_teams(df_teams)
+
+
+@task(log_prints=True)
+def query_linear_issues():
+    return linear_requester.query_issues()
+
+@task(log_prints=True)
+def process_linear_issues(issues):
+    return transformer.process_linear_issues(issues)
+
+@task
+def insert_linear_issues(df_issues):
+    return handler.insert_linear_issues(df_issues)
 
 
 @flow(name="Clockify Full ETL")
@@ -140,5 +193,83 @@ def clockify_etl():
     insert_projects(df_projects)
 
 
+
+@task(log_prints=True)
+def query_linear_clients():
+    return linear_requester.query_users()
+
+@task(log_prints=True)
+def process_linear_users(users):
+    return transformer.process_linear_users(users)
+
+@task
+def insert_linear_users(df_users):
+    return handler.insert_linear_users(df_users)
+
+
+@task(log_prints=True)
+def query_linear_teams():
+    return linear_requester.query_teams()
+
+@task(log_prints=True)
+def process_linear_teams(teams):
+    return transformer.process_linear_teams(teams)
+
+@task
+def insert_linear_teams(df_teams):
+    return handler.insert_linear_teams(df_teams)
+
+
+@task(log_prints=True)
+def query_linear_projects():
+    return linear_requester.query_projects()
+
+@task(log_prints=True)
+def process_linear_projects(projects):
+    return transformer.process_linear_projects(projects)
+
+@task
+def insert_linear_projects(df_projects):
+    return handler.insert_linear_projects(df_projects)
+
+
+@task(log_prints=True)
+def query_linear_issues():
+    return linear_requester.query_issues()
+
+@task(log_prints=True)
+def process_linear_issues(issues):
+    return transformer.process_linear_issues(issues)
+
+@task
+def insert_linear_issues(df_issues):
+    return handler.insert_linear_issues(df_issues)
+
+
+@flow(name="Linear Full ETL")
+def linear_etl():
+    # Users
+    raw_users = query_linear_clients()
+    df_users = process_linear_users(raw_users)
+    insert_linear_users(df_users)
+
+    # Teams
+    raw_teams = query_linear_teams()
+    df_teams = process_linear_teams(raw_teams)
+    insert_linear_teams(df_teams)
+
+    # Projects
+    raw_projects = query_linear_projects()
+    df_projects = process_linear_projects(raw_projects)
+    insert_linear_projects(df_projects)
+
+    # Issues
+    raw_issues = query_linear_issues()
+    df_issues = process_linear_issues(raw_issues)
+    insert_linear_issues(df_issues)
+
+
+
 if __name__ == "__main__":
     clockify_etl()
+    linear_etl()

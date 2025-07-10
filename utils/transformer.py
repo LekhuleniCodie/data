@@ -178,19 +178,44 @@ class Transformer:
         df[['archived_at','status_until_at', 'created_at', 'updated_at']] = df[['archived_at','status_until_at', 'created_at', 'updated_at']].apply(
             pd.to_datetime, errors="coerce"
         )
+
+
+        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
        
 
         return df
     
-    def process_linear_projects(self, data:dict) -> pd.DataFrame:
+    def process_linear_projects(self, data: dict) -> pd.DataFrame:
         df = pd.json_normalize(data, sep="_")
         df.columns = [self.camel_to_snake(col) for col in df.columns]
 
-        df[['start_date','started_at', 'completed_at', 'created_at']] = df[['start_date','started_at', 'completed_at', 'created_at']].apply(
-            pd.to_datetime, errors="coerce"
-        )
+        datetime_cols = ['start_date', 'started_at', 'created_at', 'completed_at']
 
+        # Convert all datetime columns forcibly
+        for col in datetime_cols:
+            df[col] = pd.to_datetime(df[col], errors='coerce')
+
+        desired_order = [
+            "id",
+            "creator_id",
+            "name",
+            "scope",
+            "start_date",
+            "started_at",
+            "created_at",
+            "completed_at",
+            "lead_id",
+            "description",
+            "priority",
+            "status_type",
+            "teams_nodes"
+        ]
+
+        df = df[desired_order]
+
+        # Replace NaT/nan/empty with None for DB insertion
         df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+
         return df
     
     def process_linear_issues(self, data:dict) -> pd.DataFrame:
@@ -202,8 +227,35 @@ class Transformer:
             pd.to_datetime, errors="coerce"
         )
 
+        #the following are null hence removed ("supervisor_id", "delegate_id", "snoozed_by_id",)
+
+        desired_order = [
+            "id",
+            "title",
+            "description",
+            "priority",
+            "estimate",
+            "assignee_id",
+            "creator_id",
+            "project_id", 
+            "team_id",
+            "created_at",
+            "started_at",
+            "completed_at",
+            "due_date",
+            "triaged_at",
+            "canceled_at",
+            "snoozed_until_at",
+            "added_to_cycle_at",
+            "added_to_project_at",
+            "added_to_team_at"
+        ]
+
+        df = df[desired_order]
+
+
         df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
-        df["needs_nodes"] = [None if (len(needs) == 0) else needs for needs in df["needs_nodes"]]
+
 
         return df
     
@@ -219,10 +271,12 @@ class Transformer:
     def process_linear_teams(self, data:dict):
         df = pd.json_normalize(data, sep="_")
         df.columns = [self.camel_to_snake(col) for col in df.columns]
+
         df[['created_at','archived_at']]=df[['created_at','archived_at']].apply(
             pd.to_datetime, errors="coerce"
         )       
         df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+
         return df
     
 

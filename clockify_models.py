@@ -9,6 +9,7 @@ Base = declarative_base()
 #client class which matches to the clients table.
 class Client(Base):
     __tablename__ = "clients"
+    __table_args__ = {'schema': 'clockify_schema'}
 
     id = Column(String(50), primary_key=True)
     name = Column(String(50))
@@ -23,6 +24,7 @@ class Client(Base):
 #user class which matches to the users table
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = {'schema': 'clockify_schema'}
 
     id = Column(String, primary_key=True)
     email = Column(String)
@@ -68,6 +70,7 @@ class User(Base):
 #task class which matches to the tasks table
 class Task(Base):
     __tablename__ = "tasks"
+    __table_args__ = {'schema': 'clockify_schema'}
 
     id = Column(String(50), primary_key=True)
     name = Column(String(50))
@@ -90,6 +93,7 @@ class Task(Base):
 #time entry class which matches to the timestamps table
 class TimeEntry(Base):
     __tablename__ = 'timestamps'
+    __table_args__ = {'schema': 'clockify_schema'}
 
     id = Column(String, primary_key=True)
     description = Column(String)
@@ -114,6 +118,7 @@ class TimeEntry(Base):
 #project class which matches to the base table
 class Project(Base):
     __tablename__ = 'projects'
+    __table_args__ = {'schema': 'clockify_schema'}
 
     id = Column(String, primary_key=True)
     name = Column(String)
