@@ -86,3 +86,18 @@ Customers
 Method	                Endpoint	                Description
 GET	                    /linear_customers	        Get all Linear customers
 
+
+Questions? Problems may arise when working on the frontend, (frontend should have minimal computations and just focus on what is does best, looking pretty.)
+
+Should the backend endpoints return the actual response? Can still be cleaned. Or should I return the data clean, ie turn the dfs to dicts and return that. (Perfect for consistency purposes)
+
+    Df -> json is better (front will get data here instead.)
+
+Also should I have endpoints to retrieve data from DB, but SQL is enough to just connect to the DB and get the data but the client should not have access to the DB, the communication with the DB should be with the backend?
+
+    (Frontend should only access the db via the backend, so DB it is.)
+
+Should data for frontend be retrieved from DB (potential stale data) our from the API's (slower response).
+
+Answered above, so it will get the data with the endpoints which get data from the db
+DB (potential stale data) solution to this may be scheduling prefect regularly

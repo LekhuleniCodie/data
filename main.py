@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from schemas import ClientCreate, ClientUpdate, Status, TaskCreate, TaskUpdate, RateInfo, Membership, Estimate, ProjectTask, ProjectCreate, ProjectUpdate
 from api_client.clockify_client import ClockifyClient
 from api_client.linear_client import LinearClient
+from db.postgres_handler import PostgresHandler
+import clockify_models, linear_models
 import os
 import requests
 from dotenv import load_dotenv
@@ -26,10 +28,12 @@ app = FastAPI()
 clockify_api_key = os.getenv("API_KEY")
 linear_api_key = os.getenv("LINEAR_API_KEY")
 workspace_id = os.getenv("WORKSPACE_ID")
-db_url = os.getenv("DB_URL")
+# db_url = os.getenv("DB_URL")
+db_url = "postgresql+psycopg2://postgres:%40Admin2025@localhost:5432/linear_clockify_db"
+handler = PostgresHandler(db_url)
 
 
-c_client = ClockifyClient(clockify_api_key)
+c_client = ClockifyClient(clockify_api_key, workspace_id)
 l_client = LinearClient(linear_api_key)
 # ─────────────────────────────────────────
 # GET Endpoints
@@ -53,7 +57,17 @@ def get_users():
     Returns:
         list: List of user objects from Clockify.
     """
-    return c_client.get_users(workspace_id)
+    return handler.get_all_as_dicts(clockify_models.User)
+
+# @app.get("/clockify_users_db")
+# def get_users():
+#     """
+#     Retrieve all users in the workspace.
+    
+#     Returns:
+#         list: List of user objects from Clockify.
+#     """
+    
 
 @app.get("/clockify_clients")
 def get_clients():
@@ -63,7 +77,7 @@ def get_clients():
     Returns:
         list: List of client objects from Clockify.
     """
-    return c_client.get_clients(workspace_id)
+    return handler.get_all_as_dicts(clockify_models.Client)
 
 @app.get("/clockify_projects")
 def get_projects():
@@ -73,7 +87,7 @@ def get_projects():
     Returns:
         list: List of project objects from Clockify.
     """
-    return c_client.get_projects(workspace_id)
+    return handler.get_all_as_dicts(clockify_models.Project)
 
 @app.get("/clockify_tasks")
 def get_tasks():
@@ -83,7 +97,7 @@ def get_tasks():
     Returns:
         list: List of task objects from Clockify.
     """
-    return c_client.get_all_tasks(workspace_id)
+    return handler.get_all_as_dicts(clockify_models.Task)
 
 @app.get("/clockify_time_entries")
 def get_time_entries():
@@ -93,7 +107,7 @@ def get_time_entries():
     Returns:
         list: List of time entry objects from Clockify.
     """
-    return c_client.get_all_time_entries(workspace_id)
+    return handler.get_all_as_dicts(clockify_models.TimeEntry)
 
 # @app.post("/users")
 # def post_user(user: UserCreate):
@@ -115,8 +129,8 @@ def post_client(client: ClientCreate):
     Returns:
         dict: Created client or error message.
     """
-    data = client.model_dump()
-    result = c_client.post_client(workspace_id, data)
+    dat = client.model_dump()
+    result = c_client.post_data(data_type="client", data=dat)
     if result is None:
         return {"error": "Failed to create client."}
     return result
@@ -132,8 +146,8 @@ def post_project(project: ProjectCreate):
     Returns:
         dict: Created project or error message.
     """
-    data = project.model_dump()
-    result = c_client.post_project(workspace_id, data)
+    dat = project.model_dump()
+    result = c_client.post_data(data_type="project", data=dat)
     if result is None:
         return {"error": "Failed to create client."}
     return result
@@ -150,8 +164,8 @@ def post_task(task: TaskCreate, project_id: str):
     Returns:
         dict: Created task or error message.
     """
-    data = task.model_dump()
-    result = c_client.post_task(workspace_id, project_id, data)
+    dat = task.model_dump()
+    result = c_client.post_data(data_type="task", data=dat, url_params={"project_id":project_id})
     if result is None:
         return {"error": "Failed to create client."}
     return result
@@ -180,8 +194,8 @@ def update_client(client: ClientUpdate, client_id:str):
     Returns:
         dict: Updated client or error message.
     """
-    data = client.model_dump()
-    result = c_client.update_client(workspace_id, client_id, data)
+    dat = client.model_dump()
+    result = c_client.put_data(data_type="client", data=dat, url_params={"client_id":client_id})
     if result is None:
         return {"error": "Failed to update client."}
     return result
@@ -199,9 +213,8 @@ def update_project(project: ProjectUpdate, project_id:str):
     Returns:
         dict: Updated project or error message.
     """
-    data
-    data = project.model_dump()
-    result = c_client.update_project(workspace_id, project_id, data)
+    dat = project.model_dump()
+    result = c_client.put_data(data_type="project", data=dat, url_params={"project_id":project_id})
     if result is None:
         return {"error": "Failed to update project."}
     return result
@@ -220,8 +233,8 @@ def update_tasks(task: TaskUpdate, task_id:str, project_id:str):
     Returns:
         dict: Updated task or error message.
     """
-    data = task.model_dump()
-    result = c_client.update_task(workspace_id, project_id, task_id, data)
+    dat = task.model_dump()
+    result = c_client.put_data(data_type="task", data=dat, url_params={"task_id":task_id, "project_id":project_id})
     if result is None:
         return {"error": "Failed to update task."}
     return result
@@ -229,7 +242,7 @@ def update_tasks(task: TaskUpdate, task_id:str, project_id:str):
 
 @app.get("/linear_users")
 def get_clients():
-    response = l_client.query_users()
+    response = l_client.get_data("users")
 
     if response:
         return response
@@ -238,7 +251,7 @@ def get_clients():
 
 @app.get("/linear_issues")
 def get_issues():
-    response = l_client.query_issues()
+    response = l_client.get_data("issues")
 
     if response:
         return response
@@ -247,7 +260,7 @@ def get_issues():
 
 @app.get("/linear_cycles")
 def get_cycles():
-    response = l_client.query_cycles()
+    response = l_client.get_data("cycles")
 
     if response:
         return response
@@ -257,7 +270,7 @@ def get_cycles():
 
 @app.get("/linear_projects")
 def get_projects():
-    response = l_client.query_projects()
+    response = l_client.get_data("projects")
 
     if response:
         return response
@@ -266,7 +279,7 @@ def get_projects():
     
 @app.get("/linear_customers")
 def get_cycles():
-    response = l_client.query_customers()
+    response = l_client.get_data("customers")
 
     if response:
         return response
@@ -276,7 +289,7 @@ def get_cycles():
 
 @app.get("/linear_teams")
 def get_cycles():
-    response = l_client.query_teams()
+    response = l_client.get_data("teams")
 
     if response:
         return response

@@ -68,74 +68,14 @@ class PostgresHandler:
             result = session.execute(qry)
             session.commit()
 
-        return result.rowcount > 0
+        if result.rowcount > 0:
+            print("DB insertion of {mod_class.__name__} was a success.")
+            return True
+        else:
+            print("DB insertion of {mod_class.__name__} failed.")
+
     
     # all the methods below make use of the method above
-
-    def insert_clockify_clients(self, df: pd.DataFrame) -> None:
-        """
-        Inserts client records into the database.
-
-        Args:
-            df (pd.DataFrame): DataFrame containing client data.
-        """
-        result = self.insert_to_db(df, clockify_models.Client)
-        print("Clients insertion success." if result else "Clients insertion failed.")
-
-    def insert_clockify_users(self, df: pd.DataFrame) -> None:
-        """
-        Inserts user records into the database.
-
-        Args:
-            df (pd.DataFrame): DataFrame containing user data.
-        """
-        result = self.insert_to_db(df, clockify_models.User) #db insertion to the users table in the clockify_schema
-        print("Users insertion success." if result else "Users insertion failed.")
-
-    def insert_clockify_tasks(self, df: pd.DataFrame) -> None:
-        """
-        Inserts task records into the database.
-
-        Args:
-            df (pd.DataFrame): DataFrame containing task data.
-        """
-        result = self.insert_to_db(df, clockify_models.Task) #db insertion to the tasks table in the clockify_schema
-        print("Tasks insertion success." if result else "Tasks insertion failed.")
-
-    def insert_clockify_user_time_entries(self, df: pd.DataFrame) -> None:
-        """
-        Inserts time entry records into the database.
-
-        Args:
-            df (pd.DataFrame): DataFrame containing time entry data.
-        """
-        result = self.insert_to_db(df, clockify_models.TimeEntry) #db insertion to the time_entries table in the clockify_schema
-        print("Time entries insertion success." if result else "Time entries insertion failed.")
-
-    def insert_clockify_projects(self, df: pd.DataFrame) -> None:
-        """
-        Inserts project records into the database.
-
-        Args:
-            df (pd.DataFrame): DataFrame containing project data.
-        """
-        result = self.insert_to_db(df, clockify_models.Project) #db insertion to the projects table in the clockify_schema
-        print("Projects insertion success." if result else "Projects insertion failed.")
-
-
-    """Insertion to the the linear db"""
-
-
-    def insert_linear_users(self, df: pd.DataFrame):
-        """
-        Inserts linear user records into a database
-
-        Args:
-            df(pd.DataFrame): a dataframe containing linear users data
-        
-        """
-        result = self.insert_to_db(df, linear_models.User) #insertion to the users table in the the linear_schema
-        print("Linear users success." if result else "Projects insertion failed.")
 
 
     def insert_linear_projects(self, df: pd.DataFrame):
@@ -163,15 +103,8 @@ class PostgresHandler:
 
         df = df.drop("teams_nodes", axis=1) #remove the teams col in the df (preparation for insertion to db)
 
-        if self.insert_to_db(df, linear_models.Project): #insertion to the projects table in the the linear_schema
-            print("Linear projects insertion success.")
-        else:
-            print("Linear projects insertion failed.")
-
-        if self.insert_to_db(team_project_df, linear_models.TeamProject): #insertion to the TeamProjects table in the linear schema
-            print("Linear team-projects insertion success.")
-        else:
-            print("Linear team-projects insertion failed.")
+        self.insert_to_db(df, linear_models.Project)
+        self.insert_to_db(team_project_df, linear_models.TeamProject)
 
     def insert_linear_teams(self, df: pd.DataFrame):
 
@@ -197,53 +130,47 @@ class PostgresHandler:
 
         df = df.drop("members_nodes", axis=1) #
 
-        if self.insert_to_db(df, linear_models.Team): #db insertion in the teams table in the linear_schema
-            print("Linear teams insertion success.")
-        else:
-            print("Linear teams insertion failed")
+        self.insert_to_db(df, linear_models.Team) #db insertion in the teams table in the linear_schema
 
-        if self.insert_to_db(team_users_df, linear_models.TeamMember): #db insertion in the team_members table in the linear_schema
-            print("Linear team-members insertion success.")
-        else:
-            print("Linear team-members insertion failed.")
+        self.insert_to_db(team_users_df, linear_models.TeamMember)
 
-    def insert_linear_issues(self, df: pd.DataFrame):
-        """Inserts Linear issues into a database.
+    ###############################################################################################################
+    """These are methods to get data from the db."""
 
-        Args:
-            df(pd.DataFrame): a dataframe containing linear issues data
+    def get_all_as_dicts(self, model_class):
+        with self.SessionLocal() as session:
+            records = session.query(model_class).all()
+            return [
+                {column.name: getattr(record, column.name) for column in model_class.__table__.columns}
+                for record in records
+            ]
         
-        """
-        if self.insert_to_db(df, linear_models.Issue): #db insertion to the issues table in the linear_schema
-            print("Linear issues insertion success.")
-        else:
-            print("Linear issues insertion failed.")
+    def get_one_as_dict_or_fail(self, model_class, record_id):
+        with self.SessionLocal() as session:
+            record = session.query(model_class).get(record_id)
+            if not record:
+                raise ValueError(f"No {model_class.__name__} found with id {record_id}")
+            return {column.name: getattr(record, column.name) for column in model_class.__table__.columns}
 
 
-    #no data in Linear yet! To be tested after the receipt of data
-    def insert_linear_cycle(self, df: pd.DataFrame):
-        """Inserts Linear cycles into a database.
-
-        Args:
-            df(pd.DataFrame): a dataframe containing linear cycles data
-        
-        """
-        if self.insert_to_db(df, linear_models.Issue):
-            print("Linear issues insertion success.")
-        else:
-            print("Linear issues insertion failed.")
-        result = self.insert_to_db(df, linear_models.Cycle)
 
 
-    def insert_linear_customers(self, df: pd.DataFrame):
-        """Inserts Linear customers into a database.
 
-        Args:
-            df(pd.DataFrame): a dataframe containing linear customers data
-        
-        """
-        result = self.insert_to_db(df, linear_models.Customer)
-            
+    def get_clockify_users_db(self): 
+        return self.get_all_as_dicts(clockify_models.User)
+    
+    
+    def get_clockify_clients_db(self):
+        return self.get_all_as_dicts(clockify_models.Client)
+
+    def get_clockify_tasks_db(self):
+        return self.get_all_as_dicts(clockify_models.Task)
+
+    def get_clockify_time_entries_db(self):
+        return self.get_all_as_dicts(clockify_models.TimeEntry)
+
+    def get_clockify_projects_db(self):
+        return self.get_all_as_dicts(clockify_models.Project)
         
         
 

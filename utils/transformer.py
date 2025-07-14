@@ -30,10 +30,13 @@ class Transformer:
         Returns:
             pd.DataFrame: Cleaned and structured DataFrame.
         """
-        df = pd.json_normalize(data, sep="_")
-        df = df.replace({"": None})
-        df.columns = [self.camel_to_snake(col) for col in df.columns] #helper function to convert names from camel case to snake case
-        return df
+        if data:
+            df = pd.json_normalize(data, sep="_")
+            df = df.replace({"": None})
+            df.columns = [self.camel_to_snake(col) for col in df.columns] #helper function to convert names from camel case to snake case
+            return df
+        else:
+            return {"message": "No clockify clients in the workspace for transformed."}
 
     def process_clockify_projects(self, data: dict) -> pd.DataFrame:
         """
@@ -45,25 +48,28 @@ class Transformer:
         Returns:
             pd.DataFrame: Cleaned and structured DataFrame.
         """
-        df = pd.json_normalize(data, sep="_")
-        membership_col = df['memberships'] #membership col extraction
-        m_flat_list = [] #to store the membership details
+        if data:
+            df = pd.json_normalize(data, sep="_")
+            membership_col = df['memberships'] #membership col extraction
+            m_flat_list = [] #to store the membership details
 
-        for item in membership_col: #for each 'array' of membership details, extract the details and extend(cool method/func btw) them to the list
-            if isinstance(item, list):
-                m_flat_list.extend(item)
+            for item in membership_col: #for each 'array' of membership details, extract the details and extend(cool method/func btw) them to the list
+                if isinstance(item, list):
+                    m_flat_list.extend(item)
 
-        m_df = pd.DataFrame(m_flat_list) #membership array to df
-        df_final = pd.concat([df, m_df], axis=1) # (dfs married to each other: you may kiss the bride)
-        df_final = df_final.drop(columns=['memberships']) #
-        df_final.columns = [self.camel_to_snake(col_name) for col_name in df_final.columns]
+            m_df = pd.DataFrame(m_flat_list) #membership array to df
+            df_final = pd.concat([df, m_df], axis=1) # (dfs married to each other: you may kiss the bride)
+            df_final = df_final.drop(columns=['memberships']) #
+            df_final.columns = [self.camel_to_snake(col_name) for col_name in df_final.columns]
 
-        arr = ["budget_estimate", "estimate_reset", "hourly_rate_amount", "hourly_rate", "cost_rate"]
-        df_final["hourly_rate_amount"] = df_final["hourly_rate_amount"].astype(float)
-        df_final[arr] = df_final[arr].apply(pd.to_numeric, errors='coerce')
-        df_final.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True) #fix all types of nulls to None(without this? my code broke a lot)
+            arr = ["budget_estimate", "estimate_reset", "hourly_rate_amount", "hourly_rate", "cost_rate"]
+            df_final["hourly_rate_amount"] = df_final["hourly_rate_amount"].astype(float)
+            df_final[arr] = df_final[arr].apply(pd.to_numeric, errors='coerce')
+            df_final.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True) #fix all types of nulls to None(without this? my code broke a lot)
 
-        return df_final
+            return df_final
+        else:
+            return {"message": "No clockify clients in the workspace to be transformed."}
 
     def process_clockify_users(self, data: dict) -> pd.DataFrame:
         """
@@ -75,21 +81,24 @@ class Transformer:
         Returns:
             pd.DataFrame: Cleaned and structured DataFrame.
         """
-        df = pd.json_normalize(data, sep="_")
+        if data:
+            df = pd.json_normalize(data, sep="_")
 
-        cast_cols = ['customFields', 'memberships']
-        for col in cast_cols:
-            if col in df.columns:
-                df[col] = df[col].apply(lambda x: str(x) if isinstance(x, list) else x) #convert cols to strings
+            cast_cols = ['customFields', 'memberships']
+            for col in cast_cols:
+                if col in df.columns:
+                    df[col] = df[col].apply(lambda x: str(x) if isinstance(x, list) else x) #convert cols to strings
 
-        df = df.replace({"": None, "[]": None})
-        df.columns = (
-            df.columns
-            .str.replace("settings_", "", regex=False)
-            .str.replace("ReportSettings", "", regex=False) #these were part od the cols header names, had to remove them for readability
-        )
-        df.columns = [self.camel_to_snake(col_name) for col_name in df.columns]
-        return df
+            df = df.replace({"": None, "[]": None})
+            df.columns = (
+                df.columns
+                .str.replace("settings_", "", regex=False)
+                .str.replace("ReportSettings", "", regex=False) #these were part od the cols header names, had to remove them for readability
+            )
+            df.columns = [self.camel_to_snake(col_name) for col_name in df.columns]
+            return df
+        else:
+            return {"message": "No clockify users in the workspace to be transformed."}
 
     def process_clockify_time_entries_in_progress(self, data: dict) -> pd.DataFrame:
         """
@@ -101,8 +110,11 @@ class Transformer:
         Returns:
             pd.DataFrame: Normalized DataFrame.
         """
-        df = pd.json_normalize(data)
-        return df
+        if data:
+            df = pd.json_normalize(data)
+            return df
+        else:
+            return {"message": "No clockify time_entries in the workspace to be transformed."}
 
     def process_clockify_time_entries_user(self, data: list[dict]) -> pd.DataFrame:
         """
@@ -114,28 +126,30 @@ class Transformer:
         Returns:
             pd.DataFrame: Cleaned DataFrame of user time entries.
         """
-        df = pd.json_normalize(data, sep="_")
-        df = df.rename(columns={"type": "type_my"})
-        df.columns = [self.camel_to_snake(col_name) for col_name in df.columns] #changing the naming convention from camelCase to snake_case
+        if data:
+            df = pd.json_normalize(data, sep="_")
+            df = df.rename(columns={"type": "type_my"})
+            df.columns = [self.camel_to_snake(col_name) for col_name in df.columns] #changing the naming convention from camelCase to snake_case
 
-        df[["hourly_rate_amount", "cost_rate_amount"]] = df[["hourly_rate_amount", "cost_rate_amount"]].astype(float) #casting to float
+            df[["hourly_rate_amount", "cost_rate_amount"]] = df[["hourly_rate_amount", "cost_rate_amount"]].astype(float) #casting to float
 
-        cast_cols = ['tag_ids', 'custom_field_values'] #nned to casted to strings
-        for col in cast_cols:
-            if col in df.columns:
-                df[col] = df[col].apply(lambda x: str(x) if isinstance(x, list) else x) #casting cols to strings
+            cast_cols = ['tag_ids', 'custom_field_values'] #nned to casted to strings
+            for col in cast_cols:
+                if col in df.columns:
+                    df[col] = df[col].apply(lambda x: str(x) if isinstance(x, list) else x) #casting cols to strings
 
-        df['time_interval_duration'] = df['time_interval_duration'].apply(self.safe_parse_duration) #convertion from string to duration
+            df['time_interval_duration'] = df['time_interval_duration'].apply(self.safe_parse_duration) #convertion from string to duration
 
-        df[["time_interval_start", "time_interval_end"]] = df[["time_interval_start", "time_interval_end"]].apply(
-            pd.to_datetime, errors="coerce"
-        )
-        df['time_interval_start'] = df['time_interval_start'].dt.tz_localize(None)
-        df['time_interval_end'] = df['time_interval_end'].dt.tz_localize(None) #remove timezones
+            df[["time_interval_start", "time_interval_end"]] = df[["time_interval_start", "time_interval_end"]].apply(pd.to_datetime, errors="coerce")
 
-        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True) #same type of NULL
+            df['time_interval_start'] = df['time_interval_start'].dt.tz_localize(None)
+            df['time_interval_end'] = df['time_interval_end'].dt.tz_localize(None) #remove timezones
 
-        return df
+            df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True) #same type of NULL
+
+            return df
+        else:
+            return {"message": "No clockify time_entries in the workspace to be transformed."}
 
     def process_clockify_tasks(self, data: dict) -> pd.DataFrame:
         """
@@ -147,19 +161,22 @@ class Transformer:
         Returns:
             pd.DataFrame: Cleaned and structured DataFrame.
         """
-        df = pd.json_normalize(data, sep="_")
-        df.columns = [self.camel_to_snake(col_name) for col_name in df.columns] #cols names from camelCase to snake_case
-        df[["hourly_rate", "cost_rate"]] = df[["hourly_rate", "cost_rate"]].astype(float) #casting cols to floats
+        if data:
+            df = pd.json_normalize(data, sep="_")
+            df.columns = [self.camel_to_snake(col_name) for col_name in df.columns] #cols names from camelCase to snake_case
+            df[["hourly_rate", "cost_rate"]] = df[["hourly_rate", "cost_rate"]].astype(float) #casting cols to floats
 
-        cast_cols = ['assignee_ids', 'user_group_ids'] #need to be casted to strings
-        for col in cast_cols:
-            if col in df.columns:
-                df[col] = df[col].apply(lambda x: str(x) if isinstance(x, list) else x)
+            cast_cols = ['assignee_ids', 'user_group_ids'] #need to be casted to strings
+            for col in cast_cols:
+                if col in df.columns:
+                    df[col] = df[col].apply(lambda x: str(x) if isinstance(x, list) else x)
 
-        df['duration'] = df['duration'].apply(self.safe_parse_duration) #conversion of strings to duration
-        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True) #NULL must be consistent
+            df['duration'] = df['duration'].apply(self.safe_parse_duration) #conversion of strings to duration
+            df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True) #NULL must be consistent
 
-        return df
+            return df
+        else:
+            return {"message": "No clockify tasks in the workspace to be transformed."}
     
     ###################################Tranformer for the linear client
 
@@ -173,12 +190,15 @@ class Transformer:
         Returns:
             pd.DataFrame: Cleaned and structured DataFrame.
         """
-        df = pd.json_normalize(data, sep="_")
-        df.columns = [self.camel_to_snake(col) for col in df.columns]
-        df[['created_at','archived_at','updated_at']] = df[['created_at','archived_at','updated_at']].apply(
-            pd.to_datetime, errors="coerce"
-        ) #conversion from strings to time
-        return df
+        if data:
+            df = pd.json_normalize(data, sep="_")
+            df.columns = [self.camel_to_snake(col) for col in df.columns]
+            df[['created_at','archived_at','updated_at']] = df[['created_at','archived_at','updated_at']].apply(
+                pd.to_datetime, errors="coerce"
+            ) #conversion from strings to time
+            return df
+        else:
+            return {"message": "No linear customers in the workspace to be transformed."}
     
     def process_linear_users(self, data: dict) -> pd.DataFrame:
         """
@@ -190,18 +210,21 @@ class Transformer:
         Returns:
             pd.DataFrame: Cleaned and structured DataFrame.
         """
-        df = pd.json_normalize(data, sep="_")
-        df.columns = [self.camel_to_snake(col) for col in df.columns]
+        if data:
+            df = pd.json_normalize(data, sep="_")
+            df.columns = [self.camel_to_snake(col) for col in df.columns]
 
-        df[['archived_at','status_until_at', 'created_at', 'updated_at']] = df[['archived_at','status_until_at', 'created_at', 'updated_at']].apply(
-            pd.to_datetime, errors="coerce"
-        )
+            df[['archived_at','status_until_at', 'created_at', 'updated_at']] = df[['archived_at','status_until_at', 'created_at', 'updated_at']].apply(
+                pd.to_datetime, errors="coerce"
+            )
 
 
-        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
-       
+            df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+        
 
-        return df
+            return df
+        else:
+            return {"message": "No linear users in the workspace to be transformed."}
     
     def process_linear_projects(self, data: dict) -> pd.DataFrame:
         """
@@ -213,37 +236,40 @@ class Transformer:
         Returns:
             pd.DataFrame: Cleaned and structured DataFrame.
         """
-        df = pd.json_normalize(data, sep="_")
-        df.columns = [self.camel_to_snake(col) for col in df.columns]
+        if data:
+            df = pd.json_normalize(data, sep="_")
+            df.columns = [self.camel_to_snake(col) for col in df.columns]
 
-        datetime_cols = ['start_date', 'started_at', 'created_at', 'completed_at']
+            datetime_cols = ['start_date', 'started_at', 'created_at', 'completed_at']
 
-        
-        for col in datetime_cols:
-            df[col] = pd.to_datetime(df[col], errors='coerce') #conversion to date time from string (apply funct could also do the joj ;))
+            
+            for col in datetime_cols:
+                df[col] = pd.to_datetime(df[col], errors='coerce') #conversion to date time from string (apply funct could also do the joj ;))
 
-        desired_order = [
-            "id",
-            "creator_id",
-            "name",
-            "scope",
-            "start_date",
-            "started_at",
-            "created_at",
-            "completed_at",
-            "lead_id",
-            "description",
-            "priority",
-            "status_type",
-            "teams_nodes"
-        ]
+            desired_order = [
+                "id",
+                "creator_id",
+                "name",
+                "scope",
+                "start_date",
+                "started_at",
+                "created_at",
+                "completed_at",
+                "lead_id",
+                "description",
+                "priority",
+                "status_type",
+                "teams_nodes"
+            ]
 
-        df = df[desired_order]
+            df = df[desired_order]
 
-        # Replace NaT/nan/empty with None for DB insertion
-        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+            # Replace NaT/nan/empty with None for DB insertion
+            df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
 
-        return df
+            return df
+        else:
+            return {"message": "No linear projects in the workspace to be transformed."}
     
     def process_linear_issues(self, data:dict) -> pd.DataFrame:
         """
@@ -255,45 +281,48 @@ class Transformer:
         Returns:
             pd.DataFrame: Cleaned and structured DataFrame.
         """
-        df = pd.json_normalize(data, sep="_")
-        df.columns = [self.camel_to_snake(col) for col in df.columns]
-        # df[['completed_at','created_at', 'triaged_at', 'updated_at', 'added_to_project_at', 'added_to_cycle_at', 'added_to_team_at', 'started_at', 'canceled_at', 'snoozed_until_at', 'started_triage_at']] = df['time_interval_duration'].apply(self.safe_parse_duration)
+        if data:
+            df = pd.json_normalize(data, sep="_")
+            df.columns = [self.camel_to_snake(col) for col in df.columns]
+            # df[['completed_at','created_at', 'triaged_at', 'updated_at', 'added_to_project_at', 'added_to_cycle_at', 'added_to_team_at', 'started_at', 'canceled_at', 'snoozed_until_at', 'started_triage_at']] = df['time_interval_duration'].apply(self.safe_parse_duration)
 
-        df[['completed_at','created_at', 'triaged_at', 'updated_at', 'added_to_project_at', 'added_to_cycle_at', 'added_to_team_at', 'started_at', 'canceled_at', 'snoozed_until_at', 'started_triage_at', 'due_date']] = df[['completed_at','created_at', 'triaged_at', 'updated_at', 'added_to_project_at', 'added_to_cycle_at', 'added_to_team_at', 'started_at', 'canceled_at', 'snoozed_until_at', 'started_triage_at', 'due_date']].apply(
-            pd.to_datetime, errors="coerce"
-        )
+            df[['completed_at','created_at', 'triaged_at', 'updated_at', 'added_to_project_at', 'added_to_cycle_at', 'added_to_team_at', 'started_at', 'canceled_at', 'snoozed_until_at', 'started_triage_at', 'due_date']] = df[['completed_at','created_at', 'triaged_at', 'updated_at', 'added_to_project_at', 'added_to_cycle_at', 'added_to_team_at', 'started_at', 'canceled_at', 'snoozed_until_at', 'started_triage_at', 'due_date']].apply(
+                pd.to_datetime, errors="coerce"
+            )
 
-        #the following are null hence removed ("supervisor_id", "delegate_id", "snoozed_by_id",)
+            #the following are null hence removed ("supervisor_id", "delegate_id", "snoozed_by_id",)
 
-        desired_order = [
-            "id",
-            "title",
-            "description",
-            "priority",
-            "estimate",
-            "assignee_id",
-            "creator_id",
-            "project_id", 
-            "team_id",
-            "created_at",
-            "started_at",
-            "completed_at",
-            "due_date",
-            "triaged_at",
-            "canceled_at",
-            "snoozed_until_at",
-            "added_to_cycle_at",
-            "added_to_project_at",
-            "added_to_team_at"
-        ]
+            desired_order = [
+                "id",
+                "title",
+                "description",
+                "priority",
+                "estimate",
+                "assignee_id",
+                "creator_id",
+                "project_id", 
+                "team_id",
+                "created_at",
+                "started_at",
+                "completed_at",
+                "due_date",
+                "triaged_at",
+                "canceled_at",
+                "snoozed_until_at",
+                "added_to_cycle_at",
+                "added_to_project_at",
+                "added_to_team_at"
+            ]
 
-        df = df[desired_order]
-
-
-        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+            df = df[desired_order]
 
 
-        return df
+            df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+
+
+            return df
+        else:
+            return {"message": "No linear issues in the workspace to be transformed."}
     
     def process_linear_cycles(self, data:dict): #empty for now
         """
@@ -305,13 +334,16 @@ class Transformer:
         Returns:
             pd.DataFrame: Cleaned and structured DataFrame.
         """
-        df = pd.json_normalize(data, sep="_")
-        df.columns = [self.camel_to_snake(col) for col in df.columns]
-        df[['completed_at','created_at','ends_at', 'starts_at', 'updated_at', 'archived_at']]=df[['completed_at','created_at','ends_at', 'starts_at', 'updated_at', 'archived_at']].apply(
-            pd.to_datetime, errors="coerce"
-        )   
-        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
-        return df
+        if data:
+            df = pd.json_normalize(data, sep="_")
+            df.columns = [self.camel_to_snake(col) for col in df.columns]
+            df[['completed_at','created_at','ends_at', 'starts_at', 'updated_at', 'archived_at']]=df[['completed_at','created_at','ends_at', 'starts_at', 'updated_at', 'archived_at']].apply(
+                pd.to_datetime, errors="coerce"
+            )   
+            df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+            return df
+        else:
+            return {"message": "No linear cycles in the workspace to be transformed."}
     
     def process_linear_teams(self, data:dict):
         """
@@ -323,16 +355,19 @@ class Transformer:
         Returns:
             pd.DataFrame: Cleaned and structured DataFrame.
         """
-        df = pd.json_normalize(data, sep="_")
-        df.columns = [self.camel_to_snake(col) for col in df.columns]
+        if data:
+            df = pd.json_normalize(data, sep="_")
+            df.columns = [self.camel_to_snake(col) for col in df.columns]
 
-        df[['created_at','archived_at']]=df[['created_at','archived_at']].apply(
-            pd.to_datetime, errors="coerce"
-        )       
-        df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
+            df[['created_at','archived_at']]=df[['created_at','archived_at']].apply(
+                pd.to_datetime, errors="coerce"
+            )       
+            df.replace({pd.NaT: None, np.nan: None, "": None, "[]": None}, inplace=True)
 
-        return df
-    
+            return df
+        else:
+            return {"message": "No clockify teams in the workspace to be transformed."}
+        
 
 
 

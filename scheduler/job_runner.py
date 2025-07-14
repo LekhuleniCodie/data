@@ -6,6 +6,7 @@ from utils.transformer import Transformer
 import os
 from dotenv import load_dotenv
 import json
+import linear_models, clockify_models
 
 """
 job_runner.py
@@ -31,7 +32,7 @@ linear_api_key = os.getenv("LINEAR_API_KEY")
 workspace_id = os.getenv("WORKSPACE_ID")
 db_url = "postgresql+psycopg2://postgres:%40Admin2025@localhost:5432/linear_clockify_db"
 
-clockify_requester = ClockifyClient(clockify_api_key)
+clockify_requester = ClockifyClient(clockify_api_key, workspace_id = os.getenv("WORKSPACE_ID"))
 linear_requester = LinearClient(linear_api_key)
 transformer = Transformer()
 handler = PostgresHandler(db_url)
@@ -39,7 +40,7 @@ handler = PostgresHandler(db_url)
 
 @task(log_prints=True)
 def fetch_clients():
-    return clockify_requester.get_clients(workspace_id)
+    return clockify_requester.get_data("clients")
 
 @task(log_prints=True)
 def process_clients(clients):
@@ -47,12 +48,12 @@ def process_clients(clients):
 
 @task(log_prints=True)
 def insert_clients(df_clients):
-    handler.insert_clockify_clients(df_clients)
+    handler.insert_to_db(df_clients, clockify_models.Client)
 
 
 @task(log_prints=True)
 def fetch_users():
-    return clockify_requester.get_users(workspace_id)
+    return clockify_requester.get_data("users")
 
 @task(log_prints=True)
 def process_users(users):
@@ -60,11 +61,11 @@ def process_users(users):
 
 @task(log_prints=True)
 def insert_users(df_users):
-    handler.insert_clockify_users(df_users)
+    handler.insert_to_db(df_users, clockify_models.User)
 
 @task(log_prints=True)
 def fetch_tasks():
-    return clockify_requester.get_all_tasks(workspace_id)
+    return clockify_requester.get_all_tasks()
 
 @task(log_prints=True)
 def process_tasks(tasks):
@@ -72,11 +73,11 @@ def process_tasks(tasks):
 
 @task(log_prints=True)
 def insert_tasks(df_tasks):
-    handler.insert_clockify_tasks(df_tasks)
+    handler.insert_to_db(df_tasks, clockify_models.Task)
 
 @task(log_prints=True)
 def fetch_entries():
-    return clockify_requester.get_all_time_entries(workspace_id)
+    return clockify_requester.get_all_time_entries()
 
 @task(log_prints=True)
 def process_entries(entries):
@@ -84,11 +85,11 @@ def process_entries(entries):
 
 @task(log_prints=True)
 def insert_entries(df_entries):
-    handler.insert_clockify_user_time_entries(df_entries)
+    handler.insert_to_db(df_entries, clockify_models.TimeEntry)
 
 @task(log_prints=True)
 def fetch_projects():
-    return clockify_requester.get_projects(workspace_id)
+    return clockify_requester.get_data("projects")
 
 @task(log_prints=True)
 def process_projects(projects):
@@ -96,58 +97,7 @@ def process_projects(projects):
 
 @task(log_prints=True)
 def insert_projects(df_projects):
-    handler.insert_clockify_projects(df_projects)
-
-@task(log_prints=True)
-def query_linear_clients():
-    return linear_requester.query_users()
-
-@task(log_prints=True)
-def process_linear_users(users):
-    return transformer.process_linear_users(df_users)
-
-@task 
-def insert_linear_users(df_users):
-    return handler.insert_linear_users(df_users)
-
-@task(log_prints=True)
-def query_linear_projects():
-    return linear_requester.query_projects()
-
-@task(log_prints=True)
-def process_linear_projects(projects):
-    return transformer.process_linear_projects(projects)
-
-@task
-def insert_linear_projects(df_projects):
-    return handler.insert_linear_projects(df_projects)
-
-
-@task(log_prints=True)
-def query_linear_teams():
-    return linear_requester.query_teams()
-
-@task(log_prints=True)
-def process_linear_teams(teams):
-    return transformer.process_linear_teams(teams)
-
-@task
-def insert_linear_teams(df_teams):
-    return handler.insert_linear_teams(df_teams)
-
-
-@task(log_prints=True)
-def query_linear_issues():
-    return linear_requester.query_issues()
-
-@task(log_prints=True)
-def process_linear_issues(issues):
-    return transformer.process_linear_issues(issues)
-
-@task
-def insert_linear_issues(df_issues):
-    return handler.insert_linear_issues(df_issues)
-
+    handler.insert_to_db(df_projects, clockify_models.Project)
 
 @flow(name="Clockify Full ETL")
 def clockify_etl():
@@ -196,7 +146,7 @@ def clockify_etl():
 
 @task(log_prints=True)
 def query_linear_clients():
-    return linear_requester.query_users()
+    return linear_requester.get_data("users")
 
 @task(log_prints=True)
 def process_linear_users(users):
@@ -204,12 +154,12 @@ def process_linear_users(users):
 
 @task
 def insert_linear_users(df_users):
-    return handler.insert_linear_users(df_users)
+    return handler.insert_to_db(df_users, linear_models.User)
 
 
 @task(log_prints=True)
 def query_linear_teams():
-    return linear_requester.query_teams()
+    return linear_requester.get_data("teams")
 
 @task(log_prints=True)
 def process_linear_teams(teams):
@@ -222,7 +172,7 @@ def insert_linear_teams(df_teams):
 
 @task(log_prints=True)
 def query_linear_projects():
-    return linear_requester.query_projects()
+    return linear_requester.get_data("projects")
 
 @task(log_prints=True)
 def process_linear_projects(projects):
@@ -235,7 +185,7 @@ def insert_linear_projects(df_projects):
 
 @task(log_prints=True)
 def query_linear_issues():
-    return linear_requester.query_issues()
+    return linear_requester.get_data("issues")
 
 @task(log_prints=True)
 def process_linear_issues(issues):
@@ -243,7 +193,7 @@ def process_linear_issues(issues):
 
 @task
 def insert_linear_issues(df_issues):
-    return handler.insert_linear_issues(df_issues)
+    return handler.insert_to_db(df_issues, linear_models.Issue)
 
 
 @flow(name="Linear Full ETL")
