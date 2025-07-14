@@ -109,15 +109,6 @@ def get_time_entries():
     """
     return handler.get_all_as_dicts(clockify_models.TimeEntry)
 
-# @app.post("/users")
-# def post_user(user: UserCreate):
-#     data = user.dict()
-#     result = c_client.post_user(workspace_id, data)
-#     if result is None:
-#         return {"error": "Failed to create user."}
-#     return result
-
-
 @app.post("/clockify_clients")
 def post_client(client: ClientCreate):
     """
@@ -169,17 +160,6 @@ def post_task(task: TaskCreate, project_id: str):
     if result is None:
         return {"error": "Failed to create client."}
     return result
-
-
-# @app.post("/time_entries")
-# def post_time_entry(time_entry: TimeEntryCreate, user_id: str):
-#     data = time_entry.dict()
-#     result = c_client.post_time_entry(workspace_id, user_id, data)
-#     if result is None:
-#         return {"error": "Failed to create client."}
-#     return result
-
-
 
 
 @app.put("/clockify_clients")
